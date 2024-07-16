@@ -14,7 +14,7 @@ import { useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
@@ -22,7 +22,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-
+  const route = useRoute();
+  const { platform } = route.params;
   const signInEmailPw = async () => {
     setLoading(true);
     try {
@@ -39,7 +40,7 @@ export default function Login() {
   return (
     <SafeAreaView className="flex-1">
       <StatusBar style="auto" />
-      <View className=" mx-5 mt-20 mb-5">
+      <View className={`mx-5  mb-5 ${platform=='android' ? 'mt-36' :'mt-20'}`}>
         <Text className="text-left text-5xl font-bold text-primary_green">
           Welcome
         </Text>

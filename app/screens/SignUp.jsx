@@ -19,9 +19,8 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 WebBrowser.maybeCompleteAuthSession();
-import { Platform } from "react-native";
 
 export default function Signup() {
   // Load the font
@@ -39,14 +38,8 @@ export default function Signup() {
   const [invalidMail, setInvalidMail] = useState(false);
   const [passLengthErr, setPassLengthErr] = useState(false);
   const navigation = useNavigation();
-  const [platform, setPlatform] = useState("");
-  useEffect(() => {
-    if (Platform.OS === "android") {
-      setPlatform("Android");
-    } else if (Platform.OS === "ios") {
-      setPlatform("iOS");
-    }
-  }, []);
+  const route = useRoute();
+  const { platform } = route.params;
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -97,7 +90,7 @@ export default function Signup() {
       {/* Total view */}
 
       {/*Top header  */}
-      <View className=" mx-5 mt-9 mb-5">
+      <View className={`mx-5 mb-5 ${platform == "android" ? "mt-20": 'mt-9'}`}>
         <Text className="text-left text-5xl font-bold text-primary_green">
           Start Your
         </Text>

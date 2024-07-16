@@ -1,7 +1,6 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { AuthContext, AuthProvider } from "./AuthContext";
 import RootLayout from "./_layout";
-import { Platform } from "react-native";
 
 export default function App() {
   return (
@@ -12,6 +11,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const { user } = useContext(AuthContext);
-  return <RootLayout user={user} />;
+  const { user, platform } = useContext(AuthContext);
+
+  return <RootLayout user={user} platform={platform} />;
 }

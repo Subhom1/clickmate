@@ -5,9 +5,8 @@ import Login from "./app/screens/Login";
 import SignUp from "./app/screens/SignUp";
 import Home from "./app/screens/Home";
 
-export default function RootLayout({ user }) {
+export default function RootLayout({ user, platform }) {
   const Stack = createNativeStackNavigator();
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName={user ? "Home" : "Login"}>
@@ -15,16 +14,19 @@ export default function RootLayout({ user }) {
           name="Login"
           component={Login}
           options={{ headerShown: false }}
+          initialParams={{ platform }}
         />
         <Stack.Screen
           name="SignUp"
           component={SignUp}
           options={{ headerShown: false }}
+          initialParams={{ platform }}
         />
         <Stack.Screen
           name="Home"
           component={Home}
           options={{ headerShown: true }}
+          initialParams={{ platform }}
         />
       </Stack.Navigator>
     </NavigationContainer>
