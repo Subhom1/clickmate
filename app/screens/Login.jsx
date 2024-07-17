@@ -6,6 +6,7 @@ import {
   TextInput,
   SafeAreaView,
   StyleSheet,
+  Platform,
 } from "react-native";
 import Checkbox from "expo-checkbox";
 import Icon from "react-native-vector-icons/Octicons";
@@ -13,17 +14,33 @@ import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { Auth } from "../../FirebaseConfig";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { Auth} from "../../FirebaseConfig";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [invalidMail, setInvalidMail] = useState(false);
   const navigation = useNavigation();
-  const route = useRoute();
-  const { platform } = route.params;
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+  const checkIsValid = () => {
+    if (!email || !password) {
+      setError(true);
+    } else if (!validateEmail(email)) {
+      setInvalidMail(true);
+    } else {
+      setInvalidMail(false);
+      setError(false);
+      signInEmailPw();
+    }
+  };
   const signInEmailPw = async () => {
     setLoading(true);
     try {
@@ -40,7 +57,9 @@ export default function Login() {
   return (
     <SafeAreaView className="flex-1">
       <StatusBar style="auto" />
-      <View className={`mx-5  mb-5 ${platform=='android' ? 'mt-36' :'mt-20'}`}>
+      <View
+        className={`mx-5  mb-5 ${Platform.OS == "android" ? "mt-24" : "mt-20"}`}
+      >
         <Text className="text-left text-5xl font-bold text-primary_green">
           Welcome
         </Text>
@@ -56,7 +75,7 @@ export default function Login() {
           className="flex w-full h-80 justify-center items-center "
         />
       ) : (
-        <View className="mt-5 mx-5">
+        <View className="mt-7 mx-5">
           <View className="relative">
             <Icon
               name="mail"
@@ -65,14 +84,28 @@ export default function Login() {
               style={styles.loginIcons}
             />
             <TextInput
-              placeholder="Enter your email/phone number"
+              placeholder="Enter your email"
               className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
-              onChangeText={(emailtxt) => setEmail(emailtxt)}
+              onChangeText={(emailtxt) => {
+                setInvalidMail(!validateEmail(emailtxt));
+                setEmail(emailtxt);
+              }}
               autoCapitalize="none"
               value={email}
             />
           </View>
-          <View className="relative mt-3">
+          {error && !email ? (
+            <Text style={styles.textError} className="pl-14 mt-1">
+              *email is required
+            </Text>
+          ) : invalidMail ? (
+            <Text style={styles.textError} className="pl-14 mt-1">
+              *email is invalid
+            </Text>
+          ) : (
+            <Text className="h-3 mt-1"></Text>
+          )}
+          <View className="relative mt-1">
             <Icon
               name="lock"
               size={16}
@@ -88,6 +121,13 @@ export default function Login() {
               secureTextEntry={true}
             />
           </View>
+          {error && !password ? (
+            <Text style={styles.textError} className="pl-14 mt-1">
+              *password is required
+            </Text>
+          ) : (
+            <Text className="mt-1.5 h-3"></Text>
+          )}
           <View className="mt-3 flex-row items-center">
             <Checkbox
               style={styles.checkbox}
@@ -100,7 +140,7 @@ export default function Login() {
           </View>
           <TouchableOpacity
             className="bg-primary_green py-4 mt-6 mb-3 rounded-full"
-            onPress={signInEmailPw}
+            onPress={checkIsValid}
           >
             <Text className="text-center text-sm text-white">Login</Text>
           </TouchableOpacity>
@@ -136,5 +176,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 28,
     top: "38%",
+  },
+  textError: {
+    color: "#AB0F12",
+    fontSize: 12,
   },
 });

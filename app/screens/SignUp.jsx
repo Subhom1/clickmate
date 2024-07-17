@@ -90,7 +90,7 @@ export default function Signup() {
       {/* Total view */}
 
       {/*Top header  */}
-      <View className={`mx-5 mb-5 ${platform == "android" ? "mt-20": 'mt-9'}`}>
+      <View className={`mx-5 mb-5 ${platform == "android" ? "mt-16": 'mt-9'}`}>
         <Text className="text-left text-5xl font-bold text-primary_green">
           Start Your
         </Text>
@@ -110,7 +110,7 @@ export default function Signup() {
           {/* name field */}
           <View className="relative">
             <Icon
-              name="person"
+              name="person"  
               size={16}
               color="#C6C6C8"
               style={styles.signupIcons}
@@ -133,7 +133,7 @@ export default function Signup() {
             <Text className="mt-1.5 h-3"></Text>
           )}
           {/* email field */}
-          <View className="relative mt-1.5">
+          <View className="relative mt-1">
             <Icon
               name="mail"
               size={16}
@@ -141,7 +141,7 @@ export default function Signup() {
               style={styles.signupIcons}
             />
             <TextInput
-              placeholder="Enter your email/phone number"
+              placeholder="Enter your email"
               className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
               onChangeText={(emailtxt) => {
                 setInvalidMail(!validateEmail(emailtxt));
@@ -163,7 +163,7 @@ export default function Signup() {
             <Text className="mt-1.5 h-3"></Text>
           )}
           {/* password field */}
-          <View className="relative mt-1.5">
+          <View className="relative mt-1">
             <Icon
               name="lock"
               size={16}
@@ -191,7 +191,7 @@ export default function Signup() {
             <Text className="mt-1.5 h-3"></Text>
           )}
           {/* confirm password field */}
-          <View className="relative mt-1.5">
+          <View className="relative mt-1">
             <Icon
               name="lock"
               size={16}

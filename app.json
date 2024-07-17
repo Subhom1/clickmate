@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "simpleproject",
-    "slug": "simpleproject",
+    "name": "clickmate",
+    "slug": "clickmate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
