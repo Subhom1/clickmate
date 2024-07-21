@@ -20,6 +20,7 @@ import {
 } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import axios from "axios";
 WebBrowser.maybeCompleteAuthSession();
 
 export default function Signup() {
@@ -54,15 +55,16 @@ export default function Signup() {
           email,
           password
         );
-        console.log(response);
+        console.log(response, "firebase response");
+        handleMongoDBRegister({ name, email});
         alert("Check your email!");
+        navigation.navigate("Home");
       } catch (error) {
-        console.error(error);
-        alert("Registration failed: " + error.message);
+        console.error(error, "error");
+        alert("Registration failed: Email already in use");
       } finally {
         setLoading(false);
       }
-    } else {
     }
   };
   const checkIsValid = () => {
@@ -83,14 +85,19 @@ export default function Signup() {
   // if (!loaded) {
   //   return null;
   // }
-
+  const handleMongoDBRegister = (user) => {
+    axios
+      .post("http://172.17.16.85:5051/register", user)
+      .then((res) => console.log(res.data))
+      .catch((e) => console.log(e.message, "Error details"));
+  };
   return (
     <SafeAreaView className="flex-1">
       <StatusBar style="auto" />
       {/* Total view */}
 
       {/*Top header  */}
-      <View className={`mx-5 mb-5 ${platform == "android" ? "mt-16": 'mt-9'}`}>
+      <View className={`mx-5 mb-5 ${platform == "android" ? "mt-16" : "mt-9"}`}>
         <Text className="text-left text-5xl font-bold text-primary_green">
           Start Your
         </Text>
@@ -110,7 +117,7 @@ export default function Signup() {
           {/* name field */}
           <View className="relative">
             <Icon
-              name="person"  
+              name="person"
               size={16}
               color="#C6C6C8"
               style={styles.signupIcons}
@@ -173,7 +180,10 @@ export default function Signup() {
             <TextInput
               placeholder="Enter your password"
               className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
-              onChangeText={(pw) => setPassword(pw)}
+              onChangeText={(pw) => {
+                pw.length >= 6 && setPassLengthErr(false);
+                setPassword(pw);
+              }}
               autoCapitalize="none"
               value={password}
               secureTextEntry={true}
@@ -227,11 +237,8 @@ export default function Signup() {
             or
           </Text>
 
-          <TouchableOpacity
-            className="rounded-full flex items-center justify-center py-4 mt-5 bg-secondary_green_deep"
-            onPress={signUpEmailPw}
-          >
-            <Text className="text-white text-sm ">Sign Up With Google</Text>
+          <TouchableOpacity className="rounded-full flex items-center justify-center py-4 mt-5 bg-primary_gray">
+            <Text className="text-white text-sm">Sign Up With Google</Text>
           </TouchableOpacity>
 
           <View className="mt-6 flex-row justify-center">

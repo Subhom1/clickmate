@@ -7,16 +7,17 @@ import {
   SafeAreaView,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import Checkbox from "expo-checkbox";
 import Icon from "react-native-vector-icons/Octicons";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { ActivityIndicator } from "react-native";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { Auth} from "../../FirebaseConfig";
+import { signInWithEmailAndPassword, GoogleAuthProvider } from "firebase/auth";
+import { Auth } from "../../FirebaseConfig";
 import { useNavigation } from "@react-navigation/native";
-
+import * as WebBrowser from "expo-web-browser";
+// WebBrowser.maybeCompleteAuthSession();
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -44,8 +45,7 @@ export default function Login() {
   const signInEmailPw = async () => {
     setLoading(true);
     try {
-      const response = await signInWithEmailAndPassword(Auth, email, password);
-      console.log(response);
+      await signInWithEmailAndPassword(Auth, email, password);
     } catch (error) {
       console.error(error);
       alert("Sign In failed: " + error.message);
@@ -147,7 +147,10 @@ export default function Login() {
           <Text className="text-center font-normal text-gray-500 text-base mt-3">
             or
           </Text>
-          <TouchableOpacity className="rounded-full flex items-center justify-center py-4 mt-5 bg-secondary_green_deep">
+          <TouchableOpacity
+            className="rounded-full flex items-center justify-center py-4 mt-5 bg-primary_gray"
+            disabled
+          >
             <Text className="text-white text-sm ">Sign In With Google</Text>
           </TouchableOpacity>
           <View className="mt-6 flex-row justify-center">
