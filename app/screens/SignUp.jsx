@@ -56,7 +56,7 @@ export default function Signup() {
           password
         );
         console.log(response, "firebase response");
-        handleMongoDBRegister({ name, email});
+        handleMongoDBRegister({ name, email });
         alert("Check your email!");
         navigation.navigate("Home");
       } catch (error) {
@@ -237,7 +237,10 @@ export default function Signup() {
             or
           </Text>
 
-          <TouchableOpacity className="rounded-full flex items-center justify-center py-4 mt-5 bg-primary_gray">
+          <TouchableOpacity
+            className="rounded-full flex items-center justify-center py-4 mt-5 bg-primary_gray"
+            disabled
+          >
             <Text className="text-white text-sm">Sign Up With Google</Text>
           </TouchableOpacity>
 

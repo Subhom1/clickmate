@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { AuthContext, AuthProvider } from "./AuthContext";
-import RootLayout from "./_layout";
+import {RootLayout} from "./_layout";
 
 export default function App() {
   return (
