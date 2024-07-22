@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from "./app/screens/Login";
@@ -12,11 +12,14 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Entypo";
 import Icon2 from "react-native-vector-icons/Octicons";
 import Icon3 from "react-native-vector-icons/EvilIcons";
+import axios from "axios";
 
 export const RootLayout = ({ user, platform }) => {
   const [isTokenValid, setIsTokenValid] = useState("");
+  const [email, setUserEmail] = useState("");
   useEffect(() => {
     if (user) {
+      setUserEmail(user?.email);
       const expirationTime = user?.stsTokenManager?.expirationTime;
       const tokenValid = expirationTime > Date.now();
       setIsTokenValid(tokenValid);
@@ -35,7 +38,7 @@ export const RootLayout = ({ user, platform }) => {
               name="Tab"
               component={MyTabs}
               options={{ headerShown: false }}
-              initialParams={{ platform }}
+              initialParams={{ platform, email }}
             />
           </>
         ) : (
@@ -59,7 +62,17 @@ export const RootLayout = ({ user, platform }) => {
   );
 };
 const Tab = createBottomTabNavigator();
-const MyTabs = () => {
+const MyTabs = ({ route }) => {
+  const { email } = route.params;
+
+  const [userName, setUserName] = useState("");
+  useEffect(() => {
+    axios
+      .get(`http://172.17.16.85:5051/user/${email}`)
+      .then((res) => setUserName(res.data.data.fullname))
+      .catch((e) => console.log(e.message, "Error details"));
+  }, [email]);
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -87,6 +100,7 @@ const MyTabs = () => {
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -127,11 +141,7 @@ const MyTabs = () => {
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => (
-            <Icon3
-              name="user"
-              size={25}
-              color={`${focused ? "#67AB0F" : "#A7B0AD"}`}
-            />
+            <InitialsCircle name={userName} focused={focused} />
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
@@ -140,3 +150,33 @@ const MyTabs = () => {
     </Tab.Navigator>
   );
 };
+const getInitials = (name) => {
+  const initials = name
+    .split(" ")
+    .map((part) => part.charAt(0))
+    .join("");
+  return initials.toUpperCase();
+};
+
+const InitialsCircle = ({ name, focused }) => {
+  const initials = getInitials(name);
+  const backgroundColor = focused ? "#67AB0F" : "#A7B0AD";
+  return (
+    <View style={[styles.circle, { backgroundColor }]}>
+      <Text style={styles.initials}>{initials}</Text>
+    </View>
+  );
+};
+const styles = StyleSheet.create({
+  circle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  initials: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+});
