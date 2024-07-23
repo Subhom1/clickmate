@@ -21,7 +21,10 @@ import {
 import { Auth } from "../../FirebaseConfig";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
-WebBrowser.maybeCompleteAuthSession();
+import { userState } from "../state/atoms/UserState";
+import { useSetRecoilState } from "recoil";
+
+// WebBrowser.maybeCompleteAuthSession();
 
 export default function Signup() {
   // Load the font
@@ -40,6 +43,8 @@ export default function Signup() {
   const [passLengthErr, setPassLengthErr] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
+  const setUserMongoData = useSetRecoilState(userState);
+
   const { platform } = route.params;
 
   const validateEmail = (email) => {
@@ -55,10 +60,8 @@ export default function Signup() {
           email,
           password
         );
-        console.log(response, "firebase response");
-        handleMongoDBRegister({ name, email });
-        alert("Check your email!");
-        navigation.navigate("Home");
+        await handleMongoDBRegister({ name, email });
+        alert("Registration Successful: Check your email!");
       } catch (error) {
         console.error(error, "error");
         alert("Registration failed: Email already in use");
@@ -85,10 +88,12 @@ export default function Signup() {
   // if (!loaded) {
   //   return null;
   // }
-  const handleMongoDBRegister = (user) => {
-    axios
+  const handleMongoDBRegister = async (user) => {
+    await axios
       .post("http://172.17.16.85:5051/register", user)
-      .then((res) => console.log(res.data))
+      .then((res) => {
+        setUserMongoData(res.config.data.name);
+      })
       .catch((e) => console.log(e.message, "Error details"));
   };
   return (

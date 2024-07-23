@@ -13,13 +13,13 @@ import Icon from "react-native-vector-icons/Entypo";
 import Icon2 from "react-native-vector-icons/Octicons";
 import Icon3 from "react-native-vector-icons/EvilIcons";
 import axios from "axios";
+import { userState } from "./app/state/atoms/UserState";
+import { useRecoilState } from "recoil";
 
 export const RootLayout = ({ user, platform }) => {
   const [isTokenValid, setIsTokenValid] = useState("");
-  const [email, setUserEmail] = useState("");
   useEffect(() => {
     if (user) {
-      setUserEmail(user?.email);
       const expirationTime = user?.stsTokenManager?.expirationTime;
       const tokenValid = expirationTime > Date.now();
       setIsTokenValid(tokenValid);
@@ -38,7 +38,7 @@ export const RootLayout = ({ user, platform }) => {
               name="Tab"
               component={MyTabs}
               options={{ headerShown: false }}
-              initialParams={{ platform, email }}
+              initialParams={{ platform }}
             />
           </>
         ) : (
@@ -62,16 +62,14 @@ export const RootLayout = ({ user, platform }) => {
   );
 };
 const Tab = createBottomTabNavigator();
-const MyTabs = ({ route }) => {
-  const { email } = route.params;
-
-  const [userName, setUserName] = useState("");
+const MyTabs = () => {
+  const [userData, setUserData] = useRecoilState(userState);
+  const [userFullname, setUserFullname] = useState("");
   useEffect(() => {
-    axios
-      .get(`http://172.17.16.85:5051/user/${email}`)
-      .then((res) => setUserName(res.data.data.fullname))
-      .catch((e) => console.log(e.message, "Error details"));
-  }, [email]);
+    if (userData) {
+      setUserFullname(userData.fullname);
+    }
+  }, [userData]);
 
   return (
     <Tab.Navigator
@@ -141,7 +139,7 @@ const MyTabs = ({ route }) => {
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => (
-            <InitialsCircle name={userName} focused={focused} />
+            <InitialsCircle name={userFullname} focused={focused} />
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
@@ -157,7 +155,6 @@ const getInitials = (name) => {
     .join("");
   return initials.toUpperCase();
 };
-
 const InitialsCircle = ({ name, focused }) => {
   const initials = getInitials(name);
   const backgroundColor = focused ? "#67AB0F" : "#A7B0AD";

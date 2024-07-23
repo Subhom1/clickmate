@@ -1,12 +1,15 @@
 import React, { useContext, useState } from "react";
 import { AuthContext, AuthProvider } from "./AuthContext";
-import {RootLayout} from "./_layout";
+import { RootLayout } from "./_layout";
+import { RecoilRoot } from "recoil";
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <RecoilRoot>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </RecoilRoot>
   );
 }
 

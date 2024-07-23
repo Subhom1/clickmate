@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import Icon from "react-native-vector-icons/FontAwesome5";
 
 export default function Home() {
+
   const [searchText, setSearchText] = useState("");
   return (
     <SafeAreaView className='flex-1'>
@@ -22,7 +23,8 @@ export default function Home() {
           new journey <Icon name="location-arrow" size={25} color="#000" />
         </Text>
         <Text className="my-5 text-gray-500">
-          New in town Be it a Friendship or Relationship that you are looking
+          New in town?{"\n"}
+          Be it a Friendship or Relationship that you are looking
           for or Just wanna chat with someone globally.
         </Text>
         <TextInput
@@ -32,6 +34,7 @@ export default function Home() {
           autoCapitalize="none"
           value={searchText}
           multiline={true}
+          maxLength={400}
         />
         <TouchableOpacity className="bg-primary_green mt-5 rounded-3xl w-32 py-3 self-center">
           <Text className="text-center text-sm text-white">Search</Text>
