@@ -45,7 +45,7 @@ export default function Profile() {
       <StatusBar style="auto" />
       <View className="flex mt-5 items-center justify-center">
         <Text className="text-2xl font-medium">
-          {userData.fullname}
+          {userData?.fullname}
         </Text>
         <TouchableOpacity
           className="rounded-full w-20 items-center justify-center py-2 mt-5 bg-secondary_blue_deep"
