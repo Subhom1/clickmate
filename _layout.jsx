@@ -8,6 +8,7 @@ import Home from "./app/screens/Home";
 import Explore from "./app/screens/Explore";
 import People from "./app/screens/People";
 import Profile from "./app/screens/Profile";
+import Result from "./app/screens/Result";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Entypo";
 import Icon2 from "react-native-vector-icons/Octicons";
@@ -39,6 +40,11 @@ export const RootLayout = ({ user, platform }) => {
               component={MyTabs}
               options={{ headerShown: false }}
               initialParams={{ platform }}
+            />
+            <Stack.Screen
+              name="Result"
+              component={Result}
+              options={{ headerShown: true }}
             />
           </>
         ) : (
