@@ -21,15 +21,13 @@ const AuthProvider = ({ children }) => {
     // Add listener for authentication state changes
     const subscribe = Auth.onAuthStateChanged((user) => {
       setUser(user);
-      if (user) {
+      if (user?.uid) {
         axios
-          .get(`http://172.17.16.85:5051/user/${user?.email}`)
+          .get(`http://172.17.16.85:5051/user/${user.email}`)
           .then((res) => {
             setUserMongoData(res.data.data);
           })
-          .catch((e) =>
-            console.log(e.message, "Error message mongodb user details")
-          );
+          .catch((e) => console.log(e, "Error message: mongodb user details"));
       }
     });
 

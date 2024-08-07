@@ -44,7 +44,7 @@ export const RootLayout = ({ user, platform }) => {
             <Stack.Screen
               name="Result"
               component={Result}
-              options={{ headerShown: true }}
+              options={{ headerShown: false }}
             />
           </>
         ) : (

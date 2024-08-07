@@ -92,7 +92,7 @@ export default function Signup() {
     await axios
       .post("http://172.17.16.85:5051/register", user)
       .then((res) => {
-        setUserMongoData(res.config.data.name);
+        setUserMongoData(res.data.data);
       })
       .catch((e) => console.log(e.message, "Error details"));
   };

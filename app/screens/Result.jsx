@@ -32,11 +32,12 @@ export default function Result() {
           You can either request{"\n"}
           Voice or Chat, else find someone next.
         </Text>
-        {match.map((item, index) => (
-          <Text key={index} className="text-2xl text-center mt-12">
-            {item.user.fullname}
+        {match && (
+          <Text className="text-2xl text-center mt-12">
+            {match.user.fullname}
+            {match.simlarity}
           </Text>
-        ))}
+        )}
         <View className="flex-row justify-evenly mt-8">
           <TouchableOpacity className=" bg-primary_green rounded-3xl w-20 py-3 self-center">
             <Text className="text-white text-center">Voice</Text>
