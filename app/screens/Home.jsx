@@ -34,11 +34,11 @@ export default function Home() {
       console.log("Client Connected to WebSocket server");
     });
     socket.on("search_update", (data) => {
-      console.log("Data:", data?.matches);
       setSearchLoading(false);
-      setMatchResult(data.matches || {});
-      if (data?.matches) navigation.navigate("Result");
-      if (data?.matches === null) {
+      setMatchResult(data.matches);
+      if (data?.matches) {
+        navigation.navigate("Result");
+      } else if (data?.matches === null) {
         setNoResult(true);
         setTimeout(() => {
           setNoResult(false);
@@ -110,21 +110,21 @@ export default function Home() {
         </Text>
         <View className="flex-row justify-evenly">
           {/* {!searchLoading && ( */}
-            <TouchableOpacity
-              className={`${
-                searchLoading ? "bg-primary_gray" : "bg-primary_green"
-              } mt-5 rounded-3xl w-32 py-3 self-center`}
-              onPress={handleSearch}
-              disabled={searchLoading}
-            >
-              {searchLoading ? (
-                <Text className="text-center text-sm text-white">
-                  Searching . . .
-                </Text>
-              ) : (
-                <Text className="text-center text-sm text-white">Search</Text>
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            className={`${
+              searchLoading ? "bg-primary_gray" : "bg-primary_green"
+            } mt-5 rounded-3xl w-32 py-3 self-center`}
+            onPress={handleSearch}
+            disabled={searchLoading}
+          >
+            {searchLoading ? (
+              <Text className="text-center text-sm text-white">
+                Searching . . .
+              </Text>
+            ) : (
+              <Text className="text-center text-sm text-white">Search</Text>
+            )}
+          </TouchableOpacity>
           {/* )} */}
           {searchLoading && (
             <TouchableOpacity

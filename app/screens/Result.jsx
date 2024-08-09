@@ -17,7 +17,7 @@ export default function Result() {
     return () => {
       clearMatchResult(null);
     };
-  });
+  }, []);
   return (
     <SafeAreaView className="flex-1">
       <StatusBar style="auto" />
@@ -26,16 +26,16 @@ export default function Result() {
           You have got a match
         </Text>
         <Text className="text-center text-3xl font-bold text-black">
-          for your search
+          for your search 🌟
         </Text>
         <Text className="mt-20 text-gray-500 text-center">
           You can either request{"\n"}
           Voice or Chat, else find someone next.
         </Text>
         {match && (
-          <Text className="text-2xl text-center mt-12">
-            {match.user.fullname}
-            {match.simlarity}
+          <Text className="text-2xl text-center mt-12 capitalize">
+            {match?.user?.fullname}
+            {match?.simlarity}
           </Text>
         )}
         <View className="flex-row justify-evenly mt-8">
@@ -59,7 +59,7 @@ export default function Result() {
               Search Again
             </Text>
           </Pressable>
-          <Pressable>
+          <Pressable onPress={() => clearMatchResult(null)}>
             <Text className="text-secondary_blue_deep underline">
               New Search
             </Text>
