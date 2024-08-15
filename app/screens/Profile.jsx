@@ -11,6 +11,7 @@ import { signOut } from "firebase/auth";
 import axios from "axios";
 import { useRecoilState } from "recoil";
 import { userState } from "../state/atoms/UserState";
+import { IP } from "../../constant";
 
 export default function Profile() {
   const [userData, setUserData] = useRecoilState(userState);
@@ -30,7 +31,7 @@ export default function Profile() {
       try {
         // Backend to delete the user from Firebase Auth and MongoDB
         await axios.delete(
-          `http://172.17.16.85:5051/deleteUser/${userData._id}/${user.uid}`
+          `http://${IP}:5051/deleteUser/${userData._id}/${user.uid}`
         );
         // Delete the user from Firebase Auth
         await user.delete();

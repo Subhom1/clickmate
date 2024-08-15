@@ -16,6 +16,8 @@ import Icon3 from "react-native-vector-icons/EvilIcons";
 import axios from "axios";
 import { userState } from "./app/state/atoms/UserState";
 import { useRecoilState } from "recoil";
+import CallScreen from "./app/screens/CallScreen";
+import ChatScreen from "./app/screens/ChatScreen/ChatScreen";
 
 export const RootLayout = ({ user, platform }) => {
   const [isTokenValid, setIsTokenValid] = useState("");
@@ -40,11 +42,24 @@ export const RootLayout = ({ user, platform }) => {
               component={MyTabs}
               options={{ headerShown: false }}
               initialParams={{ platform }}
-            />
+              />
             <Stack.Screen
               name="Result"
               component={Result}
               options={{ headerShown: false }}
+              initialParams={{ platform }}
+              />
+            {/* <Stack.Screen
+              name="CallScreen"
+              component={CallScreen}
+              options={{ headerShown: false }}
+              initialParams={{ platform }}
+            /> */}
+            <Stack.Screen
+              name="ChatScreen"
+              component={ChatScreen}
+              options={{ headerShown: false }}
+              initialParams={{ platform }}
             />
           </>
         ) : (
@@ -68,7 +83,7 @@ export const RootLayout = ({ user, platform }) => {
   );
 };
 const Tab = createBottomTabNavigator();
-const MyTabs = () => {
+const MyTabs = ({route}) => {
   const [userData, setUserData] = useRecoilState(userState);
   const [userFullname, setUserFullname] = useState("");
   useEffect(() => {
@@ -106,6 +121,7 @@ const MyTabs = () => {
           tabBarInactiveTintColor: "#A7B0AD",
           headerShown: false,
         }}
+        initialParams={route}
       />
       <Tab.Screen
         name="Explore"
@@ -122,6 +138,7 @@ const MyTabs = () => {
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
         }}
+        initialParams={route}
       />
       <Tab.Screen
         name="People"
@@ -138,6 +155,7 @@ const MyTabs = () => {
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
         }}
+        initialParams={route}
       />
       <Tab.Screen
         name="Profile"
@@ -150,6 +168,7 @@ const MyTabs = () => {
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
         }}
+        initialParams={route}
       />
     </Tab.Navigator>
   );

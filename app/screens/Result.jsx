@@ -9,15 +9,32 @@ import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { useRecoilState, useSetRecoilState } from "recoil";
 import { matchState } from "../state/atoms/MatchState";
+import { useNavigation } from "@react-navigation/native";
+import io from "socket.io-client";
+import axios from "axios";
+import { userState } from "../state/atoms/UserState";
+import { chatState } from "../state/atoms/ChatState";
+import { IP } from "../../constant";
+
+// const socket = io(`http://${IP}:5051`);
 
 export default function Result() {
-  const [match, setMatchData] = useRecoilState(matchState);
-  const clearMatchResult = useSetRecoilState(matchState);
-  useEffect(() => {
-    return () => {
-      clearMatchResult(null);
-    };
-  }, []);
+  const [matchUser, setMatchUserData] = useRecoilState(matchState);
+  const [userData, setUserData] = useRecoilState(userState);
+  const setChatId = useSetRecoilState(chatState);
+  const navigation = useNavigation();
+  const createChat = async () => {
+    await axios
+      .post(`http://${IP}:5051/create-chat`, {
+        user1Id: userData?._id,
+        user2Id: matchUser?.user?._id,
+      })
+      .then((res) => {
+        setChatId(res?.data?._id);
+        navigation.navigate("ChatScreen");
+      })
+      .catch((e) => console.error(e, "Error creating chat"));
+  };
   return (
     <SafeAreaView className="flex-1">
       <StatusBar style="auto" />
@@ -32,17 +49,19 @@ export default function Result() {
           You can either request{"\n"}
           Voice or Chat, else find someone next.
         </Text>
-        {match && (
+        {matchUser && (
           <Text className="text-2xl text-center mt-12 capitalize">
-            {match?.user?.fullname}
-            {match?.simlarity}
+            {matchUser?.user?.fullname}
           </Text>
         )}
         <View className="flex-row justify-evenly mt-8">
           <TouchableOpacity className=" bg-primary_green rounded-3xl w-20 py-3 self-center">
             <Text className="text-white text-center">Voice</Text>
           </TouchableOpacity>
-          <TouchableOpacity className=" bg-primary_blue rounded-3xl w-20 py-3 self-center">
+          <TouchableOpacity
+            className=" bg-primary_blue rounded-3xl w-20 py-3 self-center"
+            onPress={() => createChat()}
+          >
             <Text className="text-white text-center">Chat</Text>
           </TouchableOpacity>
         </View>
@@ -50,16 +69,17 @@ export default function Result() {
           1 out of 10 searches left
         </Text>
         <View className="flex-row justify-evenly mt-8">
-          <Pressable
+          {/* <Pressable
             onPress={() => {
-              console.log("Secondary Button Pressed");
+              navigation.navigate("Tab");
+              // handleSearch();
             }}
           >
             <Text className="text-secondary_green_deep underline">
               Search Again
             </Text>
-          </Pressable>
-          <Pressable onPress={() => clearMatchResult(null)}>
+          </Pressable> */}
+          <Pressable onPress={() => navigation.navigate("Tab")}>
             <Text className="text-secondary_blue_deep underline">
               New Search
             </Text>

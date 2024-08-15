@@ -5,6 +5,7 @@ import { Auth } from "./FirebaseConfig";
 import { useSetRecoilState } from "recoil";
 import axios from "axios";
 import { userState } from "./app/state/atoms/UserState";
+import { IP } from "./constant";
 
 const AuthContext = createContext();
 
@@ -23,11 +24,13 @@ const AuthProvider = ({ children }) => {
       setUser(user);
       if (user?.uid) {
         axios
-          .get(`http://172.17.16.85:5051/user/${user.email}`)
+          .get(`http://${IP}:5051/user/${user.email}`)
           .then((res) => {
             setUserMongoData(res.data.data);
           })
-          .catch((e) => console.log(e, "Error message: mongodb user details"));
+          .catch((e) =>
+            console.error(e, "Error message: mongodb user details")
+          );
       }
     });
 

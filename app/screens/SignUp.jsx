@@ -23,6 +23,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { useSetRecoilState } from "recoil";
+import { IP } from "../../constant";
 
 // WebBrowser.maybeCompleteAuthSession();
 
@@ -90,11 +91,11 @@ export default function Signup() {
   // }
   const handleMongoDBRegister = async (user) => {
     await axios
-      .post("http://172.17.16.85:5051/register", user)
+      .post(`http://${IP}:5051/register`, user)
       .then((res) => {
         setUserMongoData(res.data.data);
       })
-      .catch((e) => console.log(e.message, "Error details"));
+      .catch((e) => console.error(e.message, "Error details"));
   };
   return (
     <SafeAreaView className="flex-1">

@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Icon from "react-native-vector-icons/FontAwesome5";
@@ -14,9 +15,10 @@ import { userState } from "../state/atoms/UserState";
 import { useRecoilState, useSetRecoilState } from "recoil";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
+import { IP } from "../../constant";
 
-const socket = io("http://172.17.16.85:5051");
-export default function Home() {
+const socket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+export default function Home({ route }) {
   const [searchText, setSearchText] = useState("");
   const [userId, setUserId] = useState("");
   const [userData, setUserData] = useRecoilState(userState);
@@ -24,7 +26,8 @@ export default function Home() {
   const [noResult, setNoResult] = useState(false);
   const setMatchResult = useSetRecoilState(matchState);
   const navigation = useNavigation();
-
+  const { platform } = route.params;
+  
   useEffect(() => {
     if (userData?._id) setUserId(userData?._id);
   }, [userData]);
@@ -45,12 +48,10 @@ export default function Home() {
         }, 10000);
       }
     });
-
     socket.on("error", (error) => {
       console.error("Error from server:", error.message);
       alert("Error", error.message);
     });
-
     // Clean up WebSocket connection on unmount
     return () => {
       socket.off("search_update");
