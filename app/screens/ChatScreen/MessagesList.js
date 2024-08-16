@@ -100,10 +100,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
   },
-  online: {
-    borderColor: "#43cb6f",
-    borderWidth: 2,
-  },
   messageBox: {
     paddingHorizontal: 20,
     paddingVertical: 15,
