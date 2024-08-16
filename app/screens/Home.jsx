@@ -74,9 +74,9 @@ export default function Home({ route }) {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 mx-5">
       <StatusBar style="auto" />
-      <View className="mx-10 mt-20">
+      <View className=" mt-20">
         <Text className="text-left text-4xl font-bold text-primary_green">
           Search for Your
         </Text>
@@ -89,12 +89,12 @@ export default function Home({ route }) {
           wanna chat with someone globally.
         </Text>
         {noResult ? (
-          <Text className="text-primary_red font-bold  mt-20">
+          <Text className="text-primary_red font-bold  mt-10">
             No Users found,{"\n"}
             Try to be more specific about your search.
           </Text>
         ) : (
-          <Text className="h-9 mt-20"></Text>
+          <Text className="h-9 mt-10"></Text>
         )}
         <TextInput
           placeholder="Type your current mood"

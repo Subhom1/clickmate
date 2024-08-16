@@ -83,14 +83,8 @@ export const RootLayout = ({ user, platform }) => {
   );
 };
 const Tab = createBottomTabNavigator();
-const MyTabs = ({route}) => {
+const MyTabs = ({ route }) => {
   const [userData, setUserData] = useRecoilState(userState);
-  const [userFullname, setUserFullname] = useState("");
-  useEffect(() => {
-    if (userData) {
-      setUserFullname(userData.fullname);
-    }
-  }, [userData]);
   const { platform } = route.params;
   return (
     <Tab.Navigator
@@ -165,7 +159,10 @@ const MyTabs = ({route}) => {
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => (
-            <InitialsCircle name={userFullname} focused={focused} />
+            <InitialsCircle
+              name={userData ? userData?.fullname : ""}
+              focused={focused}
+            />
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
