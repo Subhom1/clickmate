@@ -42,13 +42,13 @@ export const RootLayout = ({ user, platform }) => {
               component={MyTabs}
               options={{ headerShown: false }}
               initialParams={{ platform }}
-              />
+            />
             <Stack.Screen
               name="Result"
               component={Result}
               options={{ headerShown: false }}
               initialParams={{ platform }}
-              />
+            />
             {/* <Stack.Screen
               name="CallScreen"
               component={CallScreen}
@@ -91,15 +91,17 @@ const MyTabs = ({route}) => {
       setUserFullname(userData.fullname);
     }
   }, [userData]);
-
+  const { platform } = route.params;
   return (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
         tabBarStyle: {
-          height: 90,
-          borderRadius: 30,
-          paddingTop: 10,
+          height: platform == "ios" ? 90 : 75,
+          borderTopRightRadius: 30,
+          borderTopLeftRadius: 30,
+          paddingTop: platform == "ios" ? 15 : 15,
+          paddingBottom: platform == "ios" ? 30 : 15,
           shadowOpacity: 0.1,
           shadowRadius: 5,
         },
