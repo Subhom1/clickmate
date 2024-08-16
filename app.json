@@ -21,6 +21,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "softwareKeyBoardLayoutMode":"pan",
       "package": "com.subhom1.clickmate"
     },
     "web": {

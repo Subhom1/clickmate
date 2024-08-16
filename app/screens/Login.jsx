@@ -17,7 +17,6 @@ import { signInWithEmailAndPassword, GoogleAuthProvider } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import * as WebBrowser from "expo-web-browser";
-// WebBrowser.maybeCompleteAuthSession();
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -53,19 +52,19 @@ export default function Login() {
       setLoading(false);
     }
   };
-
+  const inputFieldCSS = `border rounded-full ${
+    Platform.OS == "ios" ? "p-4" : "p-3"
+  } pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto`;
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 mx-5">
       <StatusBar style="auto" />
-      <View
-        className={`mx-5  mb-5 ${Platform.OS == "android" ? "mt-24" : "mt-20"}`}
-      >
+      <View className={`mb-5 ${Platform.OS == "android" ? "mt-24" : "mt-20"}`}>
         <Text className="text-left text-5xl font-bold text-primary_green">
           Welcome
         </Text>
         <Text className="text-left text-5xl font-bold text-black">back!</Text>
       </View>
-      <Text className="text-gray-500 mx-5">
+      <Text className="text-gray-500">
         You never know who is waiting for you 😉
       </Text>
       {loading ? (
@@ -75,7 +74,7 @@ export default function Login() {
           className="flex w-full h-80 justify-center items-center "
         />
       ) : (
-        <View className="mt-7 mx-5">
+        <View className="mt-7">
           <View className="relative">
             <Icon
               name="mail"
@@ -85,7 +84,7 @@ export default function Login() {
             />
             <TextInput
               placeholder="Enter your email"
-              className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
+              className={inputFieldCSS}
               onChangeText={(emailtxt) => {
                 setInvalidMail(!validateEmail(emailtxt));
                 setEmail(emailtxt);
@@ -114,7 +113,7 @@ export default function Login() {
             />
             <TextInput
               placeholder="Enter your password"
-              className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
+              className={inputFieldCSS}
               onChangeText={(pw) => setPassword(pw)}
               autoCapitalize="none"
               value={password}
@@ -144,7 +143,7 @@ export default function Login() {
           >
             <Text className="text-center text-sm text-white">Login</Text>
           </TouchableOpacity>
-          <Text className="text-center font-normal text-gray-500 text-base mt-3">
+          {/* <Text className="text-center font-normal text-gray-500 text-base mt-3">
             or
           </Text>
           <TouchableOpacity
@@ -152,7 +151,7 @@ export default function Login() {
             disabled
           >
             <Text className="text-white text-sm ">Sign In With Google</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <View className="mt-6 flex-row justify-center">
             <Text className="font-roboto">Don't have an account? </Text>
             <TouchableOpacity

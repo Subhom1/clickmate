@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Text,
   View,
@@ -6,6 +6,8 @@ import {
   TextInput,
   SafeAreaView,
   StyleSheet,
+  ScrollView,
+  Keyboard,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import Checkbox from "expo-checkbox";
@@ -25,15 +27,7 @@ import { userState } from "../state/atoms/UserState";
 import { useSetRecoilState } from "recoil";
 import { IP } from "../../constant";
 
-// WebBrowser.maybeCompleteAuthSession();
-
-export default function Signup() {
-  // Load the font
-  // const [loaded] = useFonts({
-  //   Roboto: require("../../assets/fonts/Roboto-Regular.ttf"),
-  //   "Roboto-Bold": require("../../assets/fonts/Roboto-Bold.ttf"),
-  // });
-
+export default function Signup({ route }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,11 +37,18 @@ export default function Signup() {
   const [invalidMail, setInvalidMail] = useState(false);
   const [passLengthErr, setPassLengthErr] = useState(false);
   const navigation = useNavigation();
-  const route = useRoute();
   const setUserMongoData = useSetRecoilState(userState);
-
+  const scrollViewRef = useRef();
   const { platform } = route.params;
-
+  const goToBottomList = () => {
+    scrollViewRef.current.scrollToEnd({ animated: false });
+  };
+  useEffect(() => {
+    Keyboard.addListener("keyboardDidShow", goToBottomList);
+    return () => {
+      Keyboard.removeAllListeners("keyboardDidShow", goToBottomList);
+    };
+  }, []);
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -85,10 +86,6 @@ export default function Signup() {
       signUpEmailPw();
     }
   };
-
-  // if (!loaded) {
-  //   return null;
-  // }
   const handleMongoDBRegister = async (user) => {
     await axios
       .post(`http://${IP}:5051/register`, user)
@@ -97,19 +94,29 @@ export default function Signup() {
       })
       .catch((e) => console.error(e.message, "Error details"));
   };
-  return (
-    <SafeAreaView className="flex-1">
-      <StatusBar style="auto" />
-      {/* Total view */}
 
-      {/*Top header  */}
-      <View className={`mx-5 mb-5 ${platform == "android" ? "mt-16" : "mt-9"}`}>
-        <Text className="text-left text-5xl font-bold text-primary_green">
+  const inputFieldCSS = `border rounded-full ${
+    platform === "ios" ? "p-4" : "p-3"
+  } pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto`;
+  return (
+    <SafeAreaView className="flex-1 mx-5">
+      <View className={`mb-3 ${platform == "ios" ? "mt-9" : "mt-16"}`}>
+        <Text
+          className={`text-left text-5xl ${
+            platform == "ios" ? "p-0" : "py-2 pb-0"
+          } font-bold text-primary_green`}
+        >
           Start Your
         </Text>
-        <Text className="text-left text-5xl font-bold text-black">journey</Text>
+        <Text
+          className={`text-left text-5xl ${
+            platform == "ios" ? "p-0" : "py-2 pb-0"
+          } font-bold text-black`}
+        >
+          journey
+        </Text>
       </View>
-      <Text className="text-gray-500 mx-5">and find mate for life . . .</Text>
+      <Text className="text-gray-500">and find mate for life . . .</Text>
 
       {loading ? (
         <ActivityIndicator
@@ -119,7 +126,11 @@ export default function Signup() {
         />
       ) : (
         // All Signup and below part
-        <View className="mt-5 mx-5">
+        <ScrollView
+          className="mt-5"
+          ref={scrollViewRef}
+          contentContainerStyle={{ paddingBottom: 30 }}
+        >
           {/* name field */}
           <View className="relative">
             <Icon
@@ -130,7 +141,7 @@ export default function Signup() {
             />
             <TextInput
               placeholder="Enter your full name"
-              className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
+              className={inputFieldCSS}
               onChangeText={(name) => {
                 setName(name);
               }}
@@ -155,7 +166,7 @@ export default function Signup() {
             />
             <TextInput
               placeholder="Enter your email"
-              className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
+              className={inputFieldCSS}
               onChangeText={(emailtxt) => {
                 setInvalidMail(!validateEmail(emailtxt));
                 setEmail(emailtxt);
@@ -185,7 +196,7 @@ export default function Signup() {
             />
             <TextInput
               placeholder="Enter your password"
-              className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
+              className={inputFieldCSS}
               onChangeText={(pw) => {
                 pw.length >= 6 && setPassLengthErr(false);
                 setPassword(pw);
@@ -216,7 +227,7 @@ export default function Signup() {
             />
             <TextInput
               placeholder="Confirm password"
-              className="border rounded-full p-4 pl-14 text-gray-500 border-primary_green_light mt-1 font-roboto"
+              className={inputFieldCSS}
               onChangeText={(confirmpassword) =>
                 setConfirmPassword(confirmpassword)
               }
@@ -239,7 +250,7 @@ export default function Signup() {
             <Text className="text-center text-sm text-white">Sign Up</Text>
           </TouchableOpacity>
 
-          <Text className="text-center font-normal text-gray-500 text-base mt-3">
+          {/* <Text className="text-center font-normal text-gray-500 text-base mt-3">
             or
           </Text>
 
@@ -248,7 +259,7 @@ export default function Signup() {
             disabled
           >
             <Text className="text-white text-sm">Sign Up With Google</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <View className="mt-6 flex-row justify-center">
             <Text className="font-roboto">Already have an account? </Text>
@@ -260,7 +271,7 @@ export default function Signup() {
               <Text className="text-primary_green_light">Login</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
