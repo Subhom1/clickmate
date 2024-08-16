@@ -3,10 +3,6 @@ module.exports = {
   content: ["./App.{js,jsx,ts,tsx}", "./app/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
-      // fontFamily: {
-      //   roboto: ["Roboto-Regular", "sans-serif"],
-      //   roboto_bold: ["Roboto-Bold", "sans-serif"],
-      // },
       colors: {
         primary_green: "#67AB0F",
         primary_green_light: "#95BC54",
