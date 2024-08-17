@@ -41,9 +41,11 @@ const ChatScreen = ({ route }) => {
   }, []);
   useEffect(() => {
     const getChats = async () => {
-      // `http://${IP}:5051/chat/66a8f494514769344eb8bfcf/66a8f48f514769344eb8bfcb`
       await axios
-        .get(`http://${IP}:5051/chat/${userData?._id}/${matchUser?.user?._id}`)
+        .get(
+          `http://${IP}:5051/chat/${userData?._id}/${matchUser?.user?._id}`
+          // `http://${IP}:5051/chat/66aa146b3e816880bbb45baa/66a8f494514769344eb8bfcf`
+        )
 
         .then((res) => {
           console.log("fetch");
@@ -71,7 +73,6 @@ const ChatScreen = ({ route }) => {
       },
     });
   };
-  console.log(messages, "new msgs");
 
   return (
     <SafeAreaView className="flex-1">
@@ -80,7 +81,14 @@ const ChatScreen = ({ route }) => {
         behavior={platform == "ios" ? "padding" : "height"}
         style={styles.container}
       >
-        <Header leftBtnAction={() => navigation.goBack()} />
+        <Header
+          leftBtnAction={() => {
+            socket.emit("leaveChat", { chatId });
+            navigation.goBack();
+          }}
+          fullName={matchUser && matchUser?.user?.fullname}
+          platform={platform}
+        />
 
         <MessagesList
           messagesHistory={messages}

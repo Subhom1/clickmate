@@ -23,10 +23,9 @@ const AuthProvider = ({ children }) => {
     const subscribe = Auth.onAuthStateChanged((user) => {
       setUser(user);
       if (user?.uid) {
-        axios
-          .get(`http://${IP}:5051/user/${user.email}`)
-          .then((res) => {
-            setUserMongoData(res.data.data);
+        axios.get(`http://${IP}:5051/user/${user.email}`)
+        .then((res) => {
+            setUserMongoData(res.data);
           })
           .catch((e) =>
             console.error(e, "Error message: mongodb user details")

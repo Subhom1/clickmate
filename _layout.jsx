@@ -199,6 +199,7 @@ const MyTabs = ({ route }) => {
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
+          headerShown: false,
         }}
         initialParams={route}
       />
