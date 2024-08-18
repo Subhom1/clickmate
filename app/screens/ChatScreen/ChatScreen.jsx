@@ -21,23 +21,31 @@ import { chatState } from "../../state/atoms/ChatState";
 import { IP } from "../../../constant";
 import { useNavigation } from "@react-navigation/native";
 
-const socket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
 const ChatScreen = ({ route }) => {
   const { platform } = route.params;
   const [messages, setMessages] = useState([]);
   const [chatId, setChatId] = useRecoilState(chatState);
   const [userData, setUserData] = useRecoilState(userState);
   const [matchUser, setMatchUser] = useRecoilState(matchState);
+  const [socket, setSocket] = useState(null);
+
   const navigation = useNavigation();
 
   useEffect(() => {
-    socket.on("receiveMessage", (data) => {
+    // Initialize the socket connection when the component mounts
+    const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    setSocket(newSocket);
+    newSocket.on("receiveMessage", (data) => {
       const newData = {
         ...data,
         from: data?.sender === userData?._id ? "2" : "1",
       };
       setMessages((prevItems) => [...prevItems, newData]);
     });
+    return () => {
+      newSocket.off("receiveMessage");
+      newSocket.disconnect();
+    };
   }, []);
   useEffect(() => {
     const getChats = async () => {

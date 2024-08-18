@@ -18,13 +18,13 @@ import { useNavigation } from "@react-navigation/native";
 import { IP } from "../../constant";
 import ToggleSwitch from "../components/ToggleSwitch.js";
 
-const socket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
 export default function Home({ route }) {
   const [searchText, setSearchText] = useState("");
   const [userId, setUserId] = useState("");
   const [userData, setUserData] = useRecoilState(userState);
   const [searchLoading, setSearchLoading] = useState(false);
   const [noResult, setNoResult] = useState(false);
+  const [socket, setSocket] = useState(null);
   const setMatchResult = useSetRecoilState(matchState);
   const navigation = useNavigation();
   const { platform } = route.params;
@@ -33,10 +33,13 @@ export default function Home({ route }) {
   }, [userData]);
   useEffect(() => {
     // Setup WebSocket listeners
-    socket.on("connect", () => {
+    // Initialize the socket connection when the component mounts
+    const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    setSocket(newSocket);
+    newSocket.on("connect", () => {
       console.log("Client Connected to WebSocket server");
     });
-    socket.on("search_update", (data) => {
+    newSocket.on("search_update", (data) => {
       setSearchLoading(false);
       setMatchResult(data.matches);
       if (data?.matches) {
@@ -48,15 +51,15 @@ export default function Home({ route }) {
         }, 10000);
       }
     });
-    socket.on("error", (error) => {
+    newSocket.on("error", (error) => {
       console.error("Error from server:", error.message);
       alert("Error", error.message);
     });
     // Clean up WebSocket connection on unmount
     return () => {
-      socket.off("search_update");
-      socket.off("error");
-      socket.disconnect();
+      newSocket.off("search_update");
+      newSocket.off("error");
+      newSocket.disconnect();
     };
   }, []);
   const handleSearch = () => {
