@@ -150,7 +150,7 @@ const MyTabs = ({ route }) => {
           tabBarInactiveTintColor: "#A7B0AD",
           headerShown: false,
         }}
-        initialParams={route}
+        initialParams={route.params}
       />
       <Tab.Screen
         name="Explore"
@@ -167,7 +167,7 @@ const MyTabs = ({ route }) => {
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
         }}
-        initialParams={route}
+        initialParams={route.params}
       />
       <Tab.Screen
         name="People"
@@ -184,7 +184,7 @@ const MyTabs = ({ route }) => {
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
         }}
-        initialParams={route}
+        initialParams={route.params}
       />
       <Tab.Screen
         name="Profile"
@@ -201,7 +201,7 @@ const MyTabs = ({ route }) => {
           tabBarInactiveTintColor: "#A7B0AD",
           headerShown: false,
         }}
-        initialParams={route}
+        initialParams={route.params}
       />
     </Tab.Navigator>
   );

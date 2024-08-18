@@ -28,7 +28,6 @@ export default function Home({ route }) {
   const setMatchResult = useSetRecoilState(matchState);
   const navigation = useNavigation();
   const { platform } = route.params;
-
   useEffect(() => {
     if (userData?._id) setUserId(userData?._id);
   }, [userData]);
