@@ -165,7 +165,7 @@ export default function Profile({ route }) {
         ) : (
           <TextInput
             placeholder="Describe your personality in short"
-            className={`${inputFieldCSS} mt-4 mb-8`}
+            className={`${inputFieldCSS} mt-3 mb-8`}
             onChangeText={(bio) => {
               setBio(bio);
             }}
