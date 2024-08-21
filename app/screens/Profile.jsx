@@ -88,7 +88,7 @@ export default function Profile({ route }) {
   };
 
   const { platform } = route.params;
-  const inputFieldCSS = `border rounded-3xl p-3 pl-5 text-gray-500 border-primary_green_light text-start`;
+  const inputFieldCSS = `border rounded-3xl p-3 pl-5 mt-3 text-gray-500 border-primary_green_light text-start`;
   return (
     <SafeAreaView className="flex-1 mx-7">
       <StatusBar style="auto" />
@@ -131,9 +131,9 @@ export default function Profile({ route }) {
             {/* <Icon name="settings" size={20} /> */}
           </>
         )}
-        <Pressable onPress={signOutt} className="ml-5">
+        {!editMode && <Pressable onPress={signOutt} className="ml-5">
           <Text className="text-primary_red">Logout</Text>
-        </Pressable>
+        </Pressable>}
       </View>
       <View className="mt-5">
         {!editMode ? (
@@ -165,7 +165,7 @@ export default function Profile({ route }) {
         ) : (
           <TextInput
             placeholder="Describe your personality in short"
-            className={`${inputFieldCSS} mt-3 mb-8`}
+            className={`${inputFieldCSS} mt-3 mb-8 pt-2`}
             onChangeText={(bio) => {
               setBio(bio);
             }}
