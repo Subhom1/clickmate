@@ -3,7 +3,7 @@ import React from 'react'
 
 export default function People() {
   return (
-    <SafeAreaView>
+    <SafeAreaView className='flex-1 mx-7'>
       <StatusBar style="auto" />
       <View>
         <Text>People page</Text>

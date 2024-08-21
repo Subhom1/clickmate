@@ -32,8 +32,8 @@ const ChatScreen = ({ route }) => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    // Initialize the socket connection when the component mounts
     const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    // Initialize the socket connection when the component mounts
     setSocket(newSocket);
     newSocket.on("receiveMessage", (data) => {
       const newData = {
@@ -42,12 +42,8 @@ const ChatScreen = ({ route }) => {
       };
       setMessages((prevItems) => [...prevItems, newData]);
     });
-    return () => {
-      newSocket.off("receiveMessage");
-      newSocket.disconnect();
-    };
-  }, []);
-  useEffect(() => {
+    if (!userData || !matchUser || !newSocket) return;
+    console.log("Fetching chat for:", userData?._id, matchUser?.user?._id);
     const getChats = async () => {
       await axios
         .get(
@@ -56,10 +52,9 @@ const ChatScreen = ({ route }) => {
         )
 
         .then((res) => {
-          console.log("fetch");
-
+          console.log(res?.data?._id, "fetch");
           setChatId(res?.data?._id);
-          socket.emit("joinChat", { chatId: res?.data?._id });
+          newSocket.emit("joinChat", { chatId: res?.data?._id });
           const msg = res?.data?.messages.map((item, index) => ({
             ...item,
             from: item?.sender === userData?._id ? "2" : "1",
@@ -69,7 +64,11 @@ const ChatScreen = ({ route }) => {
         .catch((e) => console.error(e, "fetch chat error"));
     };
     if (userData) getChats();
-  }, [userData]);
+    return () => {
+      newSocket.off("receiveMessage");
+      newSocket.disconnect();
+    };
+  }, []);
 
   const sendMessge = (message) => {
     if (message === "") return;
@@ -92,7 +91,7 @@ const ChatScreen = ({ route }) => {
         <Header
           leftBtnAction={() => {
             socket.emit("leaveChat", { chatId });
-            navigation.goBack();
+            navigation.navigate('People');
           }}
           fullName={matchUser && matchUser?.user?.fullname}
           platform={platform}

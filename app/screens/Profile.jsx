@@ -6,6 +6,7 @@ import {
   StatusBar,
   Pressable,
   TextInput,
+  StyleSheet,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
@@ -24,6 +25,7 @@ export default function Profile({ route }) {
   const [editMode, setEditMode] = useState(false);
   const [interests, setAllInterests] = useState([]);
   const [userInterestsIDs, setUserInterestsIDs] = useState([]);
+  const [nameError, setNameError] = useState(false);
   useEffect(() => {
     getAllInterests();
   }, []);
@@ -67,6 +69,10 @@ export default function Profile({ route }) {
       .catch((e) => console.error(e, "Error fetching interests"));
   };
   const updateUserData = async () => {
+    if (!fullname) {
+      setNameError(true);
+      return;
+    }
     const newUserData = {
       fullname,
       bio,
@@ -75,7 +81,6 @@ export default function Profile({ route }) {
     await axios
       .patch(`http://${IP}:5051/user/${userData?._id}`, newUserData)
       .then((res) => {
-        console.log(res.data, "res");
         setUserStateData(res.data);
         setEditMode((editMode) => !editMode);
       })
@@ -93,15 +98,26 @@ export default function Profile({ route }) {
         }`}
       >
         {editMode ? (
-          <Pressable
-            onPress={() => {
-              updateUserData();
-            }}
-            className="flex-row items-center"
-          >
-            <Icon name="check" size={20} />
-            <Text className="ml-2">Update</Text>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={() => {
+                updateUserData();
+              }}
+              className="flex-row items-center"
+            >
+              <Icon name="check" size={20} />
+              <Text className="ml-1">Update</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setEditMode(false);
+                setNameError(false);
+              }}
+              className="flex-row items-center"
+            >
+              <Text className="ml-5">Cancel</Text>
+            </Pressable>
+          </>
         ) : (
           <>
             <Pressable
@@ -112,7 +128,7 @@ export default function Profile({ route }) {
             >
               <Icon name="edit" size={20} />
             </Pressable>
-            <Icon name="settings" size={20} />
+            {/* <Icon name="settings" size={20} /> */}
           </>
         )}
         <Pressable onPress={signOutt} className="ml-5">
@@ -135,14 +151,21 @@ export default function Profile({ route }) {
             value={fullname}
           />
         )}
+        {nameError && !fullname ? (
+          <Text style={styles.textError} className="pl-5 mt-1">
+            *fullname is required
+          </Text>
+        ) : (
+          <Text className="mt-1.5 h-3"></Text>
+        )}
       </View>
-      <View className="my-5">
+      <View className="">
         {!editMode ? (
-          <Text className="text-gray-600">{userData?.bio}</Text>
+          <Text className="text-gray-600 mt-3 mb-10">{userData?.bio}</Text>
         ) : (
           <TextInput
             placeholder="Describe your personality in short"
-            className={inputFieldCSS}
+            className={`${inputFieldCSS} mt-4 mb-8`}
             onChangeText={(bio) => {
               setBio(bio);
             }}
@@ -206,3 +229,9 @@ export default function Profile({ route }) {
     </SafeAreaView>
   );
 }
+const styles = StyleSheet.create({
+  textError: {
+    color: "#AB0F12",
+    fontSize: 12,
+  },
+});

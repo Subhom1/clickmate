@@ -59,7 +59,6 @@ export default function Home({ route }) {
     return () => {
       newSocket.off("search_update");
       newSocket.off("error");
-      newSocket.disconnect();
     };
   }, []);
   const handleSearch = () => {
@@ -77,7 +76,7 @@ export default function Home({ route }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 mx-5">
+    <SafeAreaView className="flex-1 mx-7">
       <StatusBar style="auto" />
       <View className={`${platform == "ios" ? "mt-9" : "mt-16"}`}>
         <Text className="text-left text-4xl font-bold text-primary_green">

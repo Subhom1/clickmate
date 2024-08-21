@@ -18,6 +18,7 @@ import { userState } from "./app/state/atoms/UserState";
 import { useRecoilState } from "recoil";
 import CallScreen from "./app/screens/CallScreen";
 import ChatScreen from "./app/screens/ChatScreen/ChatScreen";
+import { InitialsCircle } from "./app/components/CreateAvatar";
 
 export const RootLayout = ({ user, platform }) => {
   const [isTokenValid, setIsTokenValid] = useState("");
@@ -195,6 +196,8 @@ const MyTabs = ({ route }) => {
             <InitialsCircle
               name={userData ? userData?.fullname : ""}
               focused={focused}
+              styles={styles}
+              nav={true}
             />
           ),
           tabBarActiveTintColor: "#67AB0F",
@@ -204,22 +207,6 @@ const MyTabs = ({ route }) => {
         initialParams={route.params}
       />
     </Tab.Navigator>
-  );
-};
-const getInitials = (name) => {
-  const initials = name
-    .split(" ")
-    .map((part) => part.charAt(0))
-    .join("");
-  return initials.toUpperCase();
-};
-const InitialsCircle = ({ name, focused }) => {
-  const initials = getInitials(name);
-  const backgroundColor = focused ? "#67AB0F" : "#A7B0AD";
-  return (
-    <View style={[styles.circle, { backgroundColor }]}>
-      <Text style={styles.initials}>{initials}</Text>
-    </View>
   );
 };
 const styles = StyleSheet.create({

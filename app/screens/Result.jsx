@@ -55,14 +55,14 @@ export default function Result() {
           </Text>
         )}
         <View className="flex-row justify-evenly mt-8">
-          <TouchableOpacity className=" bg-primary_green rounded-3xl w-20 py-3 self-center">
-            <Text className="text-white text-center">Voice</Text>
-          </TouchableOpacity>
+          {/* <TouchableOpacity className=" bg-primary_green rounded-3xl py-3 w-28 self-center">
+            <Text className="text-white text-center">Add Friend</Text>
+          </TouchableOpacity> */}
           <TouchableOpacity
-            className=" bg-primary_blue rounded-3xl w-20 py-3 self-center"
+            className=" bg-primary_blue rounded-3xl w-40 py-3 self-center"
             onPress={() => createChat()}
           >
-            <Text className="text-white text-center">Chat</Text>
+            <Text className="text-white text-center">Connect and Chat</Text>
           </TouchableOpacity>
         </View>
         <Text className="text-gray-500 mt-8 text-center">

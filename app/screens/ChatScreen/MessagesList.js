@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { ScrollView, View, StyleSheet, Text, Keyboard, Image } from "react-native";
+import { InitialsCircle } from "../../components/CreateAvatar";
 
 const MessagesList = ({ messagesHistory, fullName }) => {
   const scrollViewRef = useRef();
@@ -41,7 +42,7 @@ const Message = ({ message, fullName }) => {
       ]}
     >
       {message.from !== "2" ? (
-         <InitialsCircle name={fullName}/>
+        <InitialsCircle name={fullName} styles={styles} />
       ) : null}
       <View
         style={[
@@ -59,21 +60,6 @@ const Message = ({ message, fullName }) => {
           {message.content}
         </Text>
       </View>
-    </View>
-  );
-};
-const getInitials = (name) => {
-  const initials = name
-    .split(" ")
-    .map((part) => part.charAt(0))
-    .join("");
-  return initials.toUpperCase();
-};
-const InitialsCircle = ({ name }) => {
-  const initials = getInitials(name);
-  return (
-    <View style={[styles.circle]}>
-      <Text style={styles.initials}>{initials}</Text>
     </View>
   );
 };
@@ -95,7 +81,7 @@ const styles = StyleSheet.create({
   messageContainer: {
     flex: 1,
     maxWidth: "90%",
-    marginTop: 5,
+    marginTop: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
