@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   messageContainer: {
     flex: 1,
     maxWidth: "85%",
-    marginTop: 5,
+    marginTop: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
