@@ -19,7 +19,7 @@ const MessagesList = ({ messagesHistory, fullName }) => {
   return (
     <ScrollView
       ref={scrollViewRef}
-      style={{ flex: 1, paddingHorizontal: 30 }}
+      style={{ flex: 1, paddingHorizontal: 15 }}
       contentContainerStyle={{ paddingBottom: 30 }}
       onContentSizeChange={goToBottomList}
     >
@@ -65,8 +65,8 @@ const Message = ({ message, fullName }) => {
 };
 const styles = StyleSheet.create({
   circle: {
-    width: 25,
-    height: 25,
+    width: 30,
+    height: 30,
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     flex: 1,
-    maxWidth: "90%",
-    marginTop: 10,
+    maxWidth: "85%",
+    marginTop: 5,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",

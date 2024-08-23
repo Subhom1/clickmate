@@ -3,13 +3,12 @@ import {
   View,
   StyleSheet,
   TextInput,
-  Image,
   Text,
   Keyboard,
-  TouchableOpacity,
+  Pressable,
 } from "react-native";
 
-const MessageInputBox = ({addNewMessage }) => {
+const MessageInputBox = ({ addNewMessage }) => {
   const [keyboardOpened, setKeyboardOpened] = useState(false);
   const [newMessage, setNewMessage] = useState("");
 
@@ -33,19 +32,22 @@ const MessageInputBox = ({addNewMessage }) => {
 
   return (
     <View style={styles.root}>
-
       <TextInput
         placeholder="Message..."
         style={styles.textInput}
         value={newMessage}
         onChangeText={(text) => setNewMessage(text)}
+        className="flex-1 h-full"
       />
-    
-          <View style={styles.sendBtnBox}>
-            <TouchableOpacity onPress={sendMessage}>
-              <Text style={styles.sendBtnText}>Send</Text>
-            </TouchableOpacity>
-          </View>
+
+      <View style={styles.sendBtnBox} className='w-20'>
+        <Pressable
+          onPress={sendMessage}
+          style={styles.sendButton}
+        >
+          <Text style={styles.sendBtnText}>Send</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
@@ -56,73 +58,31 @@ const styles = StyleSheet.create({
     borderTopColor: "#ccc",
     borderTopWidth: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 15,
-    display:'flex',
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent: 'space-between',
-  },
-  helper: {
+    display: "flex",
     flexDirection: "row",
-    marginTop: 10,
-  },
-  helperText1: {
-    fontSize: 10,
-    color: "#222",
-  },
-  helperText2: {
-    fontSize: 10,
-    color: "#222",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   textInput: {
+    flex: 1,
     fontSize: 14,
     color: "#222",
-  },
-  actionBox: {
-    marginTop: 15,
-    flexDirection: "row",
-  },
-  photos: {
-    flexDirection: "row",
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 30,
-    marginLeft: -8,
-  },
-  online: {
-    borderColor: "#3bcd6b",
-    borderWidth: 2,
-  },
-  extraUsersNum: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#222",
-  },
-  extraUsersNumText: {
-    color: "#fff",
-    fontSize: 14,
-  },
-  addNewMember: {
-    justifyContent: "center",
-    alignItems: "center",
-    color: "#222",
-    backgroundColor: "#f4f4f4",
+    paddingHorizontal: 10,
   },
   sendBtnBox: {
-    height: 30,
-    width: 50,
+    justifyContent: "center",
+    alignItems: "center",
     borderLeftColor: "#d8d8d8",
     borderLeftWidth: 1,
-    justifyContent:'center',
+  },
+  sendButton: {
+    height: "100%", // Make the Pressable take up the full height
+    justifyContent: "center",
+    alignItems: "center",
   },
   sendBtnText: {
     fontSize: 14,
-    marginLeft: 15,
     color: "#222",
-    justifyContent: 'center',
-    alignItems:'center'
   },
 });
 

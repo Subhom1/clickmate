@@ -114,7 +114,7 @@ export default function Home({ route }) {
             style={{ maxHeight: 125 }}
           />
           <Text className="text-primary_blue text-xs mt-3">
-            <Icon2 name="info" style={{ margin: "10px" }} /> The more
+            <Icon2 name="info" style={{ margin: 10 }} /> The more
             descriptive your query, the more accurate the result will be.
           </Text>
         </KeyboardAvoidingView>

@@ -20,9 +20,8 @@ const Header = ({ leftBtnAction, fullName, platform }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 15,
-    paddingBottom: 15,
-    paddingHorizontal: 30,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
   },
   header: {
     alignItems: "center",
