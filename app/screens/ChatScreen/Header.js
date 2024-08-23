@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Text } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Text, Pressable } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
 const Header = ({ leftBtnAction, fullName, platform }) => {
@@ -8,9 +8,9 @@ const Header = ({ leftBtnAction, fullName, platform }) => {
       style={[styles.container, platform == "android" && { marginTop: 30 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={leftBtnAction}>
-          <Icon name="arrow-back-ios-new" size={25} />
-        </TouchableOpacity>
+        <Pressable onPress={leftBtnAction}>
+          <Icon name="arrow-back-ios-new" size={20} />
+        </Pressable>
         <Text className="text-lg capitalize">{fullName}</Text>
         <Text className="text-xs text-primary_green">Available</Text>
       </View>

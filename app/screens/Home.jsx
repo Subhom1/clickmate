@@ -76,9 +76,9 @@ export default function Home({ route }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 mx-7">
+    <SafeAreaView className="flex-1  bg-white">
       <StatusBar style="auto" />
-      <View className={`${platform == "ios" ? "mt-9" : "mt-16"}`}>
+      <View className={`${platform == "ios" ? "mt-9" : "mt-16"} mx-7`}>
         <Text className="text-left text-4xl font-bold text-primary_green">
           Search for Your
         </Text>

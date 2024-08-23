@@ -19,6 +19,7 @@ import { useRecoilState } from "recoil";
 import CallScreen from "./app/screens/CallScreen";
 import ChatScreen from "./app/screens/ChatScreen/ChatScreen";
 import { InitialsCircle } from "./app/components/CreateAvatar";
+import VisitorProfile from "./app/screens/VisitorProfile";
 
 export const RootLayout = ({ user, platform }) => {
   const [isTokenValid, setIsTokenValid] = useState("");
@@ -59,6 +60,12 @@ export const RootLayout = ({ user, platform }) => {
             <Stack.Screen
               name="ChatScreen"
               component={ChatScreen}
+              options={{ headerShown: false }}
+              initialParams={{ platform }}
+            />
+            <Stack.Screen
+              name="VisitorProfile"
+              component={VisitorProfile}
               options={{ headerShown: false }}
               initialParams={{ platform }}
             />
@@ -167,6 +174,7 @@ const MyTabs = ({ route }) => {
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
+          headerShown: false,
         }}
         initialParams={route.params}
       />
@@ -184,6 +192,7 @@ const MyTabs = ({ route }) => {
           ),
           tabBarActiveTintColor: "#67AB0F",
           tabBarInactiveTintColor: "#A7B0AD",
+          headerShown: false,
         }}
         initialParams={route.params}
       />

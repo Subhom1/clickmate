@@ -46,11 +46,10 @@ export default function Result() {
           for your search 🌟
         </Text>
         <Text className="mt-20 text-gray-500 text-center">
-          You can either request{"\n"}
-          Voice or Chat, else find someone next.
+          You can now Chat with the user,{"\n"} or find someone next.
         </Text>
         {matchUser && (
-          <Text className="text-2xl text-center mt-12 capitalize">
+          <Text className="text-2xl text-center mt-12 capitalize text-secondary_blue_deep">
             {matchUser?.user?.fullname}
           </Text>
         )}
@@ -59,10 +58,10 @@ export default function Result() {
             <Text className="text-white text-center">Add Friend</Text>
           </TouchableOpacity> */}
           <TouchableOpacity
-            className=" bg-primary_blue rounded-3xl w-40 py-3 self-center"
+            className=" bg-primary_blue rounded-3xl w-24 py-3 self-center"
             onPress={() => createChat()}
           >
-            <Text className="text-white text-center">Connect and Chat</Text>
+            <Text className="text-white text-center">Chat</Text>
           </TouchableOpacity>
         </View>
         <Text className="text-gray-500 mt-8 text-center">
@@ -76,7 +75,7 @@ export default function Result() {
             }}
           >
             <Text className="text-secondary_green_deep underline">
-              Search Again
+              Home
             </Text>
           </Pressable> */}
           <Pressable onPress={() => navigation.navigate("Tab")}>

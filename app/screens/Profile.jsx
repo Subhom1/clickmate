@@ -90,140 +90,159 @@ export default function Profile({ route }) {
   const { platform } = route.params;
   const inputFieldCSS = `border rounded-3xl p-3 pl-5 mt-3 text-gray-500 border-primary_green_light text-start`;
   return (
-    <SafeAreaView className="flex-1 mx-7">
+    <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="auto" />
-      <View
-        className={`flex-row items-center justify-end ${
-          platform == "ios" ? "mt-5" : "mt-16"
-        }`}
-      >
-        {editMode ? (
-          <>
-            <Pressable
-              onPress={() => {
-                updateUserData();
-              }}
-              className="flex-row items-center"
-            >
-              <Icon name="check" size={20} />
-              <Text className="ml-1">Update</Text>
+      <View className="mx-7">
+        <View
+          className={`flex-row items-center justify-end ${
+            platform == "ios" ? "mt-5" : "mt-16"
+          }`}
+        >
+          {editMode ? (
+            <>
+              <Pressable
+                onPress={() => {
+                  updateUserData();
+                }}
+                className="flex-row items-center"
+              >
+                <Icon name="check" size={20} />
+                <Text className="ml-1">Update</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setEditMode(false);
+                  setNameError(false);
+                }}
+                className="flex-row items-center"
+              >
+                <Text className="ml-5">Cancel</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable
+                className="mr-3"
+                onPress={() => {
+                  setEditMode((editMode) => !editMode);
+                }}
+              >
+                <Icon name="edit" size={20} />
+              </Pressable>
+              {/* <Icon name="settings" size={20} /> */}
+            </>
+          )}
+          {!editMode && (
+            <Pressable onPress={signOutt} className="ml-5">
+              <Text className="text-primary_red">Logout</Text>
             </Pressable>
-            <Pressable
-              onPress={() => {
-                setEditMode(false);
-                setNameError(false);
+          )}
+        </View>
+        <View className="mt-5">
+          {!editMode ? (
+            <Text className="text-2xl font-medium capitalize">
+              {userData?.fullname}
+            </Text>
+          ) : (
+            <TextInput
+              placeholder="Enter your full name"
+              className={inputFieldCSS}
+              onChangeText={(name) => {
+                setFullName(name);
               }}
-              className="flex-row items-center"
-            >
-              <Text className="ml-5">Cancel</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <Pressable
-              className="mr-5"
-              onPress={() => {
-                setEditMode((editMode) => !editMode);
+              autoCapitalize="none"
+              value={fullname}
+            />
+          )}
+          {nameError && !fullname ? (
+            <Text style={styles.textError} className="pl-5 mt-1">
+              *fullname is required
+            </Text>
+          ) : (
+            <Text className="mt-1.5 h-3"></Text>
+          )}
+        </View>
+        <View className="">
+          {!editMode ? (
+            <Text className="text-gray-600 mb-7">{userData?.bio}</Text>
+          ) : (
+            <TextInput
+              placeholder="Describe your personality in short"
+              className={`${inputFieldCSS} mt-3 mb-5 pt-2`}
+              onChangeText={(bio) => {
+                setBio(bio);
               }}
-            >
-              <Icon name="edit" size={20} />
-            </Pressable>
-            {/* <Icon name="settings" size={20} /> */}
-          </>
-        )}
-        {!editMode && <Pressable onPress={signOutt} className="ml-5">
-          <Text className="text-primary_red">Logout</Text>
-        </Pressable>}
-      </View>
-      <View className="mt-5">
-        {!editMode ? (
-          <Text className="text-2xl font-medium capitalize">
-            {userData?.fullname}
-          </Text>
-        ) : (
-          <TextInput
-            placeholder="Enter your full name"
-            className={inputFieldCSS}
-            onChangeText={(name) => {
-              setFullName(name);
-            }}
-            autoCapitalize="none"
-            value={fullname}
-          />
-        )}
-        {nameError && !fullname ? (
-          <Text style={styles.textError} className="pl-5 mt-1">
-            *fullname is required
-          </Text>
-        ) : (
-          <Text className="mt-1.5 h-3"></Text>
-        )}
-      </View>
-      <View className="">
-        {!editMode ? (
-          <Text className="text-gray-600 mt-3 mb-10">{userData?.bio}</Text>
-        ) : (
-          <TextInput
-            placeholder="Describe your personality in short"
-            className={`${inputFieldCSS} mt-3 mb-8 pt-2`}
-            onChangeText={(bio) => {
-              setBio(bio);
-            }}
-            autoCapitalize="none"
-            value={bio}
-            multiline={true}
-            maxLength={200}
-            style={{ height: 100 }}
-          />
-        )}
-      </View>
+              autoCapitalize="none"
+              value={bio}
+              multiline={true}
+              maxLength={200}
+              style={{ height: 100 }}
+            />
+          )}
+        </View>
 
-      {/* <TouchableOpacity
+        {/* <TouchableOpacity
           className="rounded-full w-40 items-center justify-center py-2 mt-5 bg-primary_red"
           onPress={deleteAcc}
         >
           <Text className="text-white">Delete Account</Text>
         </TouchableOpacity> */}
 
-      <View>
-        {!editMode ? (
-          <View className="flex-row flex-wrap">
-            {userData?.interests.map((it, index) => (
-              <View
-                key={it._id}
-                className="px-4 py-2 rounded-full mb-2 mr-2 bg-primary_green_light"
-              >
-                <Text className="text-white">{it.text}</Text>
+        <View>
+          {!editMode ? (
+            <>
+              <Text className="mb-3 font-medium">Interests</Text>
+              <View className="flex-row flex-wrap">
+                {userData?.interests.map((it, index) => (
+                  <View
+                    key={it._id}
+                    className="px-4 py-2 rounded-full mb-2 mr-1 bg-primary_green_light"
+                  >
+                    <Text className="text-white">{it.text}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        ) : (
-          <View className="flex-row flex-wrap">
-            {interests.map((it, index) => {
-              const isExists = userInterestsIDs.includes(it._id);
-              return (
-                <Pressable
-                  key={it._id}
-                  className={`px-4 py-2 rounded-full mb-2 mr-2 ${
-                    isExists ? "bg-primary_green_light" : "bg-gray-400"
-                  }`}
-                  onPress={() => {
-                    if (isExists) {
-                      // If the item exists, remove it from userInterestsIDs
-                      setUserInterestsIDs((prev) =>
-                        prev.filter((interestId) => interestId !== it._id)
-                      );
-                    } else {
-                      // If the item does not exist, add it to userInterestsIDs
-                      setUserInterestsIDs((prev) => [...prev, it._id]);
-                    }
-                  }}
-                >
-                  <Text className="text-white">{it.text}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+            </>
+          ) : (
+            <>
+              <Text className="mb-3 font-medium">Interests</Text>
+
+              <View className="flex-row flex-wrap">
+                {interests.map((it, index) => {
+                  const isExists = userInterestsIDs.includes(it._id);
+                  return (
+                    <Pressable
+                      key={it._id}
+                      className={`px-4 py-2 rounded-full mb-2 mr-1 ${
+                        isExists ? "bg-primary_green_light" : "bg-gray-400"
+                      }`}
+                      onPress={() => {
+                        if (isExists) {
+                          // If the item exists, remove it from userInterestsIDs
+                          setUserInterestsIDs((prev) =>
+                            prev.filter((interestId) => interestId !== it._id)
+                          );
+                        } else {
+                          // If the item does not exist, add it to userInterestsIDs
+                          setUserInterestsIDs((prev) => [...prev, it._id]);
+                        }
+                      }}
+                    >
+                      <Text className="text-white">{it.text}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
+        </View>
+        {editMode && (
+          <TouchableOpacity
+            className="rounded-full w-40 items-center justify-center py-2 mt-5 bg-primary_red"
+            onPress={deleteAcc}
+          >
+            <Text className="text-white">Delete Account</Text>
+          </TouchableOpacity>
         )}
       </View>
     </SafeAreaView>
