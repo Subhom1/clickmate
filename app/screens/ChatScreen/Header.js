@@ -2,7 +2,7 @@ import React from "react";
 import { View, TouchableOpacity, StyleSheet, Text, Pressable } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
-const Header = ({ leftBtnAction, fullName, platform }) => {
+const Header = ({ leftBtnAction, rightBtnAction, fullName, platform }) => {
   return (
     <View
       style={[styles.container, platform == "android" && { marginTop: 30 }]}
@@ -11,8 +11,10 @@ const Header = ({ leftBtnAction, fullName, platform }) => {
         <Pressable onPress={leftBtnAction}>
           <Icon name="arrow-back-ios-new" size={20} />
         </Pressable>
-        <Text className="text-lg capitalize pl-24">{fullName}</Text>
-        {/* <Text className="text-xs text-primary_green">Available</Text> */}
+        <Text className="text-lg capitalize ">{fullName}</Text>
+        <Pressable onPress={rightBtnAction}>
+          <Icon name="delete" size={24} color="#AB0F12" />
+        </Pressable>
       </View>
     </View>
   );
@@ -25,7 +27,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    justifyContent: "start",
+    justifyContent: "space-between",
     flexDirection: "row",
   },
 });
