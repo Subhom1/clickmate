@@ -32,7 +32,6 @@ export default function Home({ route }) {
     if (userData?._id) setUserId(userData?._id);
   }, [userData]);
   useEffect(() => {
-    // Setup WebSocket listeners
     // Initialize the socket connection when the component mounts
     const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
     setSocket(newSocket);

@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
@@ -92,7 +93,10 @@ export default function Profile({ route }) {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="auto" />
-      <View className="mx-7">
+      <ScrollView
+        className="mx-7"
+        contentContainerStyle={{ paddingBottom: 90 }}
+      >
         <View
           className={`flex-row items-center justify-end ${
             platform == "ios" ? "mt-5" : "mt-16"
@@ -244,7 +248,7 @@ export default function Profile({ route }) {
             <Text className="text-white">Delete Account</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

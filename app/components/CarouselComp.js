@@ -1,23 +1,34 @@
-import { StyleSheet, Text, View, ImageBackground, Pressable } from "react-native";
-import React from 'react'
+import {
+  StyleSheet,
+  Text,
+  View,
+  ImageBackground,
+  Pressable, Platform
+} from "react-native";
+import React from "react";
 import Carousel from "react-native-reanimated-carousel";
 import { IP } from "../../constant";
-const CarouselComp = ({width, dataArr, onPress}) => {
-    const baseOptions = {
-      vertical: false,
-      width: width * 0.7,
-      height: width / 2.3,
-    };
+const CarouselComp = ({ width, dataArr, onPress, itemMain, platform }) => {
+  const baseOptions = {
+    vertical: false,
+    width: width * 0.7,
+    height: width / 2.3,
+  };
   return (
     <Carousel
       {...baseOptions}
       loop={false}
-      style={{ width: "100%"}}
+      style={{ width: "100%" }}
       data={dataArr}
       pagingEnabled={true}
       onSnapToItem={(index) => console.log("current index:", index)}
       renderItem={({ item, index }) => (
-        <Pressable style={styles.carouselItemContainer} onPress={() => { onPress(item.text)}}>
+        <Pressable
+          style={styles.carouselItemContainer}
+          onPress={() => {
+            onPress(item, itemMain);
+          }}
+        >
           {/* ImageBackground allows us to put an overlay and content over the image */}
           <ImageBackground
             source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
@@ -35,10 +46,10 @@ const CarouselComp = ({width, dataArr, onPress}) => {
       )}
     />
   );
-}
+};
 const styles = StyleSheet.create({
   carouselItemContainer: {
-    height: 170,
+    height: Platform.OS =='ios'?170:155,
     justifyContent: "center",
     borderRadius: 22,
     marginRight: 15,
@@ -67,4 +78,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CarouselComp
+export default CarouselComp;

@@ -38,7 +38,7 @@ export default function Result() {
   return (
     <SafeAreaView className="flex-1">
       <StatusBar style="auto" />
-      <View className="mx-10 mt-20">
+      <View className=" mt-20">
         <Text className="text-center text-3xl font-bold text-primary_green">
           You have got a match
         </Text>

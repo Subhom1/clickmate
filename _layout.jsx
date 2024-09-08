@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, Text, Keyboard } from "react-native";
+import { StyleSheet, Keyboard } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from "./app/screens/Login";
@@ -12,14 +12,12 @@ import Result from "./app/screens/Result";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Entypo";
 import Icon2 from "react-native-vector-icons/Octicons";
-import Icon3 from "react-native-vector-icons/EvilIcons";
-import axios from "axios";
 import { userState } from "./app/state/atoms/UserState";
 import { useRecoilState } from "recoil";
-import CallScreen from "./app/screens/CallScreen";
 import ChatScreen from "./app/screens/ChatScreen/ChatScreen";
 import { InitialsCircle } from "./app/components/CreateAvatar";
 import VisitorProfile from "./app/screens/VisitorProfile";
+import ExploreSearch from "./app/screens/ExploreSearch";
 
 export const RootLayout = ({ user, platform }) => {
   const [isTokenValid, setIsTokenValid] = useState("");
@@ -51,12 +49,6 @@ export const RootLayout = ({ user, platform }) => {
               options={{ headerShown: false }}
               initialParams={{ platform }}
             />
-            {/* <Stack.Screen
-              name="CallScreen"
-              component={CallScreen}
-              options={{ headerShown: false }}
-              initialParams={{ platform }}
-            /> */}
             <Stack.Screen
               name="ChatScreen"
               component={ChatScreen}
@@ -66,6 +58,12 @@ export const RootLayout = ({ user, platform }) => {
             <Stack.Screen
               name="VisitorProfile"
               component={VisitorProfile}
+              options={{ headerShown: false }}
+              initialParams={{ platform }}
+            />
+            <Stack.Screen
+              name="ExploreSearch"
+              component={ExploreSearch}
               options={{ headerShown: false }}
               initialParams={{ platform }}
             />
