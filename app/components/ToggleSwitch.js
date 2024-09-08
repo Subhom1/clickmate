@@ -4,7 +4,7 @@ import React, { useState } from "react";
 const ToggleSwitch = () => {
   const [isOn, setIsOn] = useState(true);
   const toggleSwitch = () => {
-    setIsOn((isOn) => !isOn);
+    // setIsOn((isOn) => !isOn);
   };
   return (
     <View style={styles.container}>
