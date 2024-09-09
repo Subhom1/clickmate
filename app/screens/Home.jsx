@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
+  Pressable,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Icon from "react-native-vector-icons/FontAwesome5";
@@ -73,7 +74,14 @@ export default function Home({ route }) {
     socket.emit("cancel_search", { userId });
     setSearchLoading(false);
   };
-
+  const tags = [
+    "friendship",
+    "weekend escape",
+    "date",
+    "city tour",
+    "cafe hopping together",
+    "bored",
+  ];
   return (
     <SafeAreaView className="flex-1  bg-white">
       <StatusBar style="auto" />
@@ -90,21 +98,30 @@ export default function Home({ route }) {
           wanna chat with someone globally.
         </Text>
         <ToggleSwitch />
-        {noResult ? (
-          <Text className="text-primary_red font-bold  mt-5">
-            No Users found,{"\n"}
-            Try to be more specific about your search.
-          </Text>
-        ) : (
-          <Text className="h-9 mt-10"></Text>
-        )}
+        <View className="flex-row flex-wrap mt-5">
+          {tags.map((item, index) => (
+            <Pressable onPress={() => setSearchText(item)} key={index}>
+              <Text className="text-secondary_blue_deep px-2 py-2  bg-blue-100 mb-1 mr-1">
+                # {item}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View className="h-9 my-2">
+          {noResult && (
+            <Text className="text-primary_red text-xs font-medium">
+              No Users found,{"\n"}
+              Try to be more specific about your search.
+            </Text>
+          )}
+        </View>
         <KeyboardAvoidingView
           behavior={platform === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={platform == "ios" ? 90 : 70}
         >
           <TextInput
             placeholder="Type your current mood"
-            className="border rounded-3xl p-5 text-gray-500 border-primary_green_light mt-5 font-roboto"
+            className="border rounded-3xl p-5 text-gray-500 border-primary_green_light font-roboto"
             onChangeText={(txt) => setSearchText(txt)}
             autoCapitalize="none"
             value={searchText}
@@ -113,8 +130,8 @@ export default function Home({ route }) {
             style={{ maxHeight: 125 }}
           />
           <Text className="text-primary_blue text-xs mt-3">
-            <Icon2 name="info" style={{ margin: 10 }} /> The more
-            descriptive your query, the more accurate the result will be.
+            <Icon2 name="info" style={{ margin: 10 }} /> The more descriptive
+            your query, the more accurate the result will be.
           </Text>
         </KeyboardAvoidingView>
 

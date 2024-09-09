@@ -22,7 +22,6 @@ export default function ExploreSearch({ route }) {
   const setMatchResult = useSetRecoilState(matchState);
   const [userId, setUserId] = useState("");
   const [userData, setUserData] = useRecoilState(userState);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [noResult, setNoResult] = useState(false);
   const navigation = useNavigation();
   const { platform, item, itemTitle } = route.params;
@@ -37,22 +36,16 @@ export default function ExploreSearch({ route }) {
     newSocket.on("connect", () => {
       console.log("Client Connected to WebSocket server");
     });
-    setSearchLoading(true);
-    setNoResult(false);
     newSocket.emit("submit_keyword", {
       userId: userData?._id,
       query: itemTitle,
     });
     newSocket.on("search_update", (data) => {
-      setSearchLoading(false);
       setMatchResult(data.matches);
       if (data?.matches) {
         navigation.navigate("Result");
       } else if (data?.matches === null) {
         setNoResult(true);
-        setTimeout(() => {
-          setNoResult(false);
-        }, 10000);
       }
     });
     newSocket.on("error", (error) => {
@@ -68,16 +61,22 @@ export default function ExploreSearch({ route }) {
 
   const handleCancelSearch = () => {
     socket.emit("cancel_search", { userId });
-    setSearchLoading(false);
     navigation.goBack();
   };
-console.log(userId);
+  const tryAgain = () => {
+    setNoResult(false);
+    socket.emit("submit_keyword", {
+      userId: userData?._id,
+      query: itemTitle,
+    });
+  };
+  console.log(userId);
   return (
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="auto" />
       <View className={`flex-1 mx-7 ${platform == "ios" ? "mt-5" : "mt-16"} `}>
         <View className="flex-row items-center ">
-          <Pressable onPress={() => navigation.goBack()}>
+          <Pressable onPress={handleCancelSearch}>
             <Icon name="arrow-back-ios-new" size={20} />
           </Pressable>
           <Text className="text-xl font-semibold ml-5">
@@ -101,21 +100,30 @@ console.log(userId);
             </ImageBackground>
           </View>
           {!noResult ? (
-            <Text className="my-5 text-center text-lg font-medium">
+            <Text className="my-5 text-center text-sm font-medium">
               Searching for a budy. . .
             </Text>
           ) : (
-            <Text className="text-primary_red font-bold  mt-5">
-              No Users found,{"\n"}
-              Try to be more specific about your search.
+            <Text className="text-primary_red text-sm font-medium text-center my-5">
+              No Users found,
+              Try again or Try different.
             </Text>
           )}
-          <TouchableOpacity
-            className="mt-5 rounded-3xl w-32 py-3 self-center bg-primary_red"
-            onPress={handleCancelSearch}
-          >
-            <Text className="text-center text-sm text-white">Cancel</Text>
-          </TouchableOpacity>
+          {noResult ? (
+            <TouchableOpacity
+              className="mt-5 rounded-3xl w-32 py-3 self-center bg-primary_blue"
+              onPress={tryAgain}
+            >
+              <Text className="text-center text-sm text-white">Try again</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              className="mt-5 rounded-3xl w-32 py-3 self-center bg-primary_red"
+              onPress={handleCancelSearch}
+            >
+              <Text className="text-center text-sm text-white">Cancel</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>
