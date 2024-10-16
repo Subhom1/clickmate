@@ -2,6 +2,10 @@
 
 ClickMate is a React Native (Expo) app to find buddy for every moment
 
+# App
+<img src="https://raw.githubusercontent.com/Subhom1/mygitsrc/master/src/gif/clickmate-app.gif" alt="preview">
+
+
 ## Instruction to run the program
 
 Node version required: v21.4.0
