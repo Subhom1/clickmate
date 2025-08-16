@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   carouselItemContainer: {
+    backgroundColor: "white",
     height: 170,
     width: "100%",
     justifyContent: "center",

@@ -49,7 +49,8 @@ const CarouselComp = ({ width, dataArr, onPress, itemMain, platform }) => {
 };
 const styles = StyleSheet.create({
   carouselItemContainer: {
-    height: Platform.OS =='ios'?170:155,
+    backgroundColor: "white",
+    height: Platform.OS == "ios" ? 170 : 155,
     justifyContent: "center",
     borderRadius: 22,
     marginRight: 15,
