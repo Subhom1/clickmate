@@ -1,1 +1,1 @@
-export const IP = `192.168.31.169`;
+export const IP = process.env.EXPO_PUBLIC_IP;
