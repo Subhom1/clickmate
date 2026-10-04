@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   SafeAreaView,
@@ -7,13 +7,14 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Pressable,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import Icon2 from "react-native-vector-icons/Feather";
 import io from "socket.io-client";
 import { userState } from "../state/atoms/UserState";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
 import { IP } from "../../constant";
@@ -21,57 +22,83 @@ import ToggleSwitch from "../components/ToggleSwitch.js";
 
 export default function Home({ route }) {
   const [searchText, setSearchText] = useState("");
-  const [userId, setUserId] = useState("");
-  const [userData, setUserData] = useRecoilState(userState);
+  const userData = useRecoilValue(userState);
   const [searchLoading, setSearchLoading] = useState(false);
   const [noResult, setNoResult] = useState(false);
   const [socket, setSocket] = useState(null);
+  const noResultTimerRef = useRef(null);
   const setMatchResult = useSetRecoilState(matchState);
   const navigation = useNavigation();
   const { platform } = route.params;
+
   useEffect(() => {
-    if (userData?._id) setUserId(userData?._id);
-  }, [userData]);
-  useEffect(() => {
-    // Initialize the socket connection when the component mounts
     const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+
     setSocket(newSocket);
     newSocket.on("connect", () => {
       console.log("Client Connected to WebSocket server");
     });
     newSocket.on("search_update", (data) => {
+      const match = data?.matches;
+
       setSearchLoading(false);
-      setMatchResult(data.matches);
-      if (data?.matches) {
+      if (noResultTimerRef.current) {
+        clearTimeout(noResultTimerRef.current);
+      }
+      if (match?.user?._id) {
+        setMatchResult(match);
         navigation.navigate("Result");
-      } else if (data?.matches === null) {
+      } else {
+        setMatchResult(null);
         setNoResult(true);
-        setTimeout(() => {
+        noResultTimerRef.current = setTimeout(() => {
           setNoResult(false);
         }, 10000);
       }
     });
     newSocket.on("error", (error) => {
       console.error("Error from server:", error.message);
-      alert("Error", error.message);
+      Alert.alert("Error", error.message || "Something went wrong");
+      setSearchLoading(false);
     });
-    // Clean up WebSocket connection on unmount
+
     return () => {
+      if (noResultTimerRef.current) {
+        clearTimeout(noResultTimerRef.current);
+      }
       newSocket.off("search_update");
       newSocket.off("error");
+      newSocket.disconnect();
     };
   }, []);
+
   const handleSearch = () => {
-    if (searchText.trim() === "") {
-      alert("Please enter a search query");
+    const query = searchText.trim();
+
+    if (query === "") {
+      Alert.alert("Search required", "Please enter a search query");
+      return;
+    }
+    if (!userData?._id) {
+      Alert.alert("Please wait", "Your profile is still loading");
+      return;
+    }
+    if (!socket?.connected) {
+      Alert.alert("Connection unavailable", "Please try again in a moment");
       return;
     }
     setSearchLoading(true);
     setNoResult(false);
-    socket.emit("submit_keyword", { userId, query: searchText });
+    if (noResultTimerRef.current) {
+      clearTimeout(noResultTimerRef.current);
+    }
+    socket.emit("submit_keyword", { userId: userData._id, query });
   };
+
   const handleCancelSearch = () => {
-    socket.emit("cancel_search", { userId });
+    if (socket?.connected && userData?._id) {
+      socket.emit("cancel_search", { userId: userData._id });
+    }
     setSearchLoading(false);
   };
   const tags = [

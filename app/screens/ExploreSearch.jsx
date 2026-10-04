@@ -7,6 +7,7 @@ import {
   ImageBackground,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
@@ -14,63 +15,79 @@ import { IP } from "../../constant";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";
 import { matchState } from "../state/atoms/MatchState";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import io from "socket.io-client";
 
 export default function ExploreSearch({ route }) {
   const [socket, setSocket] = useState(null);
   const setMatchResult = useSetRecoilState(matchState);
-  const [userId, setUserId] = useState("");
-  const [userData, setUserData] = useRecoilState(userState);
+  const userData = useRecoilValue(userState);
   const [noResult, setNoResult] = useState(false);
   const navigation = useNavigation();
   const { platform, item, itemTitle } = route.params;
+  const query = `${itemTitle || ""}`.trim();
 
   useEffect(() => {
-    if (userData?._id) setUserId(userData?._id);
-  }, [userData]);
-  useEffect(() => {
-    // Initialize the socket connection when the component mounts
+    if (!userData?._id || !query) {
+      return;
+    }
+
     const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
     setSocket(newSocket);
+    const submitSearch = () => {
+      setNoResult(false);
+      newSocket.emit("submit_keyword", {
+        userId: userData._id,
+        query,
+      });
+    };
+
     newSocket.on("connect", () => {
       console.log("Client Connected to WebSocket server");
-    });
-    newSocket.emit("submit_keyword", {
-      userId: userData?._id,
-      query: itemTitle,
+      submitSearch();
     });
     newSocket.on("search_update", (data) => {
-      setMatchResult(data.matches);
-      if (data?.matches) {
+      const match = data?.matches;
+
+      if (match?.user?._id) {
+        setMatchResult(match);
         navigation.navigate("Result");
-      } else if (data?.matches === null) {
+      } else {
+        setMatchResult(null);
         setNoResult(true);
       }
     });
     newSocket.on("error", (error) => {
       console.error("Error from server:", error.message);
-      alert("Error", error.message);
+      Alert.alert("Error", error.message || "Something went wrong");
     });
-    // Clean up WebSocket connection on unmount
+
     return () => {
       newSocket.off("search_update");
       newSocket.off("error");
+      newSocket.disconnect();
     };
-  }, []);
+  }, [navigation, query, setMatchResult, userData?._id]);
 
   const handleCancelSearch = () => {
-    socket.emit("cancel_search", { userId });
+    if (socket?.connected && userData?._id) {
+      socket.emit("cancel_search", { userId: userData._id });
+    }
     navigation.goBack();
   };
   const tryAgain = () => {
+    if (!socket?.connected || !userData?._id) {
+      Alert.alert("Connection unavailable", "Please try again in a moment");
+      return;
+    }
+
     setNoResult(false);
     socket.emit("submit_keyword", {
-      userId: userData?._id,
-      query: itemTitle,
+      userId: userData._id,
+      query,
     });
   };
-  console.log(userId);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="auto" />

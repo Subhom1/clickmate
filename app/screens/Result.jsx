@@ -4,30 +4,35 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { StatusBar } from "expo-status-bar";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
-import io from "socket.io-client";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";
 import { IP } from "../../constant";
 
-// const socket = io(`http://${IP}:5051`);
-
 export default function Result() {
-  const [matchUser, setMatchUserData] = useRecoilState(matchState);
-  const [userData, setUserData] = useRecoilState(userState);
+  const matchUser = useRecoilValue(matchState);
+  const userData = useRecoilValue(userState);
   const setChatId = useSetRecoilState(chatState);
   const navigation = useNavigation();
+  const matchedUser = matchUser?.user;
+
   const createChat = async () => {
+    if (!userData?._id || !matchedUser?._id) {
+      Alert.alert("Match unavailable", "Please start a new search");
+      return;
+    }
+
     await axios
       .post(`http://${IP}:5051/create-chat`, {
-        user1Id: userData?._id,
-        user2Id: matchUser?.user?._id,
+        user1Id: userData._id,
+        user2Id: matchedUser._id,
       })
       .then((res) => {
         setChatId(res?.data?._id);
@@ -48,9 +53,9 @@ export default function Result() {
         <Text className="mt-20 text-gray-500 text-center">
           You can now Chat with the user,{"\n"} or find someone next.
         </Text>
-        {matchUser && (
+        {matchedUser && (
           <Text className="text-2xl text-center mt-12 capitalize text-secondary_blue_deep">
-            {matchUser?.user?.fullname}
+            {matchedUser.fullname}
           </Text>
         )}
         <View className="flex-row justify-evenly mt-8">
