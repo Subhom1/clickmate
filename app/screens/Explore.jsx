@@ -1,22 +1,22 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   FlatList,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useAtom, useSetAtom } from "jotai";
 import { exploreState } from "../state/atoms/ExploreState";
 import axios from "axios";
 import { IP } from "../../constant";
 import CarouselComp from "../components/CarouselComp";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router/react-navigation";
 
 export default function Explore({ route }) {
-  const [explores, setExplores] = useRecoilState(exploreState);
-  const setExploreState = useSetRecoilState(exploreState);
+  const [explores, setExplores] = useAtom(exploreState);
+  const setExploreState = useSetAtom(exploreState);
   const navigation = useNavigation();
   useEffect(() => {
     const getExplores = async () => {

@@ -6,21 +6,17 @@ import {
   Pressable, Platform
 } from "react-native";
 import React from "react";
-import Carousel from "react-native-reanimated-carousel";
+import { Carousel } from "react-native-reanimated-carousel";
 import { IP } from "../../constant";
 const CarouselComp = ({ width, dataArr, onPress, itemMain, platform }) => {
-  const baseOptions = {
-    vertical: false,
-    width: width * 0.7,
-    height: width / 2.3,
-  };
   return (
     <Carousel
-      {...baseOptions}
+      orientation="horizontal"
+      itemSize={width * 0.7}
       loop={false}
-      style={{ width: "100%" }}
+      style={{ width: "100%", height: width / 2.3 }}
       data={dataArr}
-      pagingEnabled={true}
+      snapMode="page"
       onSnapToItem={(index) => console.log("current index:", index)}
       renderItem={({ item, index }) => (
         <Pressable

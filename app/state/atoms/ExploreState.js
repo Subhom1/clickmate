@@ -1,5 +1,3 @@
-import { atom } from "recoil";
-export const exploreState = atom({
-  key: "exploreState",
-  default: null,
-});
+import { atom } from "jotai";
+
+export const exploreState = atom(null);

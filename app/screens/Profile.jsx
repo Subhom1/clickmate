@@ -1,8 +1,8 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Pressable,
   TextInput,
@@ -13,14 +13,14 @@ import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
 import { signOut } from "firebase/auth";
 import axios from "axios";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useAtom, useSetAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
 import { IP } from "../../constant";
-import Icon from "react-native-vector-icons/Feather";
+import Icon from "@expo/vector-icons/Feather";
 
 export default function Profile({ route }) {
-  const [userData, setUserData] = useRecoilState(userState);
-  const setUserStateData = useSetRecoilState(userState);
+  const [userData, setUserData] = useAtom(userState);
+  const setUserStateData = useSetAtom(userState);
   const [fullname, setFullName] = useState("");
   const [bio, setBio] = useState("");
   const [editMode, setEditMode] = useState(false);

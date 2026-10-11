@@ -1,6 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, StyleSheet, Text, Pressable } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import Icon from "@expo/vector-icons/MaterialIcons";
 
 const Header = ({ leftBtnAction, rightBtnAction, fullName, platform }) => {
   return (

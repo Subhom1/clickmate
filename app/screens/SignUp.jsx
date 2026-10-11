@@ -1,17 +1,17 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useEffect, useRef } from "react";
 import {
   Text,
   View,
   TouchableOpacity,
   TextInput,
-  SafeAreaView,
   StyleSheet,
   ScrollView,
   Keyboard,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import Checkbox from "expo-checkbox";
-import Icon from "react-native-vector-icons/Octicons";
+import Icon from "@expo/vector-icons/Octicons";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { useFonts } from "expo-font";
@@ -21,10 +21,10 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "expo-router/react-navigation";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
-import { useSetRecoilState } from "recoil";
+import { useSetAtom } from "jotai";
 import { IP } from "../../constant";
 
 export default function Signup({ route }) {
@@ -37,16 +37,16 @@ export default function Signup({ route }) {
   const [invalidMail, setInvalidMail] = useState(false);
   const [passLengthErr, setPassLengthErr] = useState(false);
   const navigation = useNavigation();
-  const setUserMongoData = useSetRecoilState(userState);
+  const setUserMongoData = useSetAtom(userState);
   const scrollViewRef = useRef();
   const { platform } = route.params;
   const goToBottomList = () => {
     scrollViewRef.current.scrollToEnd({ animated: false });
   };
   useEffect(() => {
-    Keyboard.addListener("keyboardDidShow", goToBottomList);
+    const subscription = Keyboard.addListener("keyboardDidShow", goToBottomList);
     return () => {
-      Keyboard.removeAllListeners("keyboardDidShow", goToBottomList);
+      subscription.remove();
     };
   }, []);
   const validateEmail = (email) => {

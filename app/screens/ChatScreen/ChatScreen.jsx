@@ -1,7 +1,7 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useEffect } from "react";
 import {
   View,
-  SafeAreaView,
   Text,
   TouchableOpacity,
   TextInput,
@@ -13,21 +13,21 @@ import Header from "./Header";
 import MessageInputBox from "./MessageInputBox";
 import MessagesList from "./MessagesList";
 import io from "socket.io-client";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useAtom, useSetAtom } from "jotai";
 import axios from "axios";
 import { userState } from "../../state/atoms/UserState";
 import { matchState } from "../../state/atoms/MatchState";
 import { chatState } from "../../state/atoms/ChatState";
 import { IP } from "../../../constant";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router/react-navigation";
 import Toast from "react-native-root-toast";
 const ChatScreen = ({ route }) => {
   const { platform, secondUserInfo } = route.params;
   const [messages, setMessages] = useState([]);
-  const [chatId, setChatId] = useRecoilState(chatState);
-  const [userData, setUserData] = useRecoilState(userState);
-  const [matchUser, setMatchUser] = useRecoilState(matchState);
-  const setUserMongoData = useSetRecoilState(userState);
+  const [chatId, setChatId] = useAtom(chatState);
+  const [userData, setUserData] = useAtom(userState);
+  const [matchUser, setMatchUser] = useAtom(matchState);
+  const setUserMongoData = useSetAtom(userState);
   const [socket, setSocket] = useState(null);
   const navigation = useNavigation();
   const secondUser = secondUserInfo ? secondUserInfo : matchUser?.user;

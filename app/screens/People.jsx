@@ -1,22 +1,22 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   FlatList,
   Pressable,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useRecoilState } from "recoil";
+import { useAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
-import Icon from "react-native-vector-icons/AntDesign";
-import { useNavigation } from "@react-navigation/native";
+import Icon from "@expo/vector-icons/AntDesign";
+import { useNavigation } from "expo-router/react-navigation";
 import io from "socket.io-client";
 import axios from "axios";
 import { IP } from "../../constant";
 
 export default function People({ route }) {
-  const [userData, setUserData] = useRecoilState(userState);
+  const [userData, setUserData] = useAtom(userState);
   const [userUnreadArr, setUserUnreadArr] = useState([]);
   const navigation = useNavigation();
   useEffect(() => {

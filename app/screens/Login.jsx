@@ -1,21 +1,21 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import React from "react";
 import {
   Text,
   View,
   TouchableOpacity,
   TextInput,
-  SafeAreaView,
   StyleSheet,
   Platform,
   ActivityIndicator,
 } from "react-native";
 import Checkbox from "expo-checkbox";
-import Icon from "react-native-vector-icons/Octicons";
+import Icon from "@expo/vector-icons/Octicons";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { signInWithEmailAndPassword, GoogleAuthProvider } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router/react-navigation";
 import * as WebBrowser from "expo-web-browser";
 export default function Login() {
   const [isChecked, setChecked] = useState(false);

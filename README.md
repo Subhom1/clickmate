@@ -49,9 +49,9 @@ Below is an overview of the key folders and files in the repository:
 
 ```
 clickmate/
-├── App.jsx                # App entry point (initializes Recoil and Context Providers)
+├── App.jsx                # Initializes Jotai, auth, gesture and safe-area providers
 ├── _layout.jsx            # Navigation structure (Tab and Stack Navigation)
-├── AuthContext.jsx        # Manages Firebase auth state and updates Recoil state
+├── AuthContext.jsx        # Manages Firebase auth state and updates Jotai state
 ├── FirebaseConfig.js      # Initializes the Firebase client application instance
 ├── FirebaseSecret.js      # Firebase credential configuration
 ├── constant.js            # Configuration constants (stores the server IP address)
@@ -60,7 +60,7 @@ clickmate/
 │   │   ├── CarouselComp.js
 │   │   ├── CreateAvatar.js
 │   │   └── ToggleSwitch.js
-│   ├── state/             # Recoil state atoms for global state management
+│   ├── state/             # Jotai atoms for global state management
 │   │   └── atoms/
 │   └── screens/           # Main application screens
 │       ├── Login.jsx      # Login interface
@@ -92,9 +92,9 @@ Follow these steps to run ClickMate locally in your development environment.
 ### Prerequisites
 
 Ensure you have the following installed on your machine:
-*   Node.js (v18.x or v20.x recommended)
+*   Node.js 22.13 or newer (Node 22 LTS recommended for Expo SDK 57)
 *   npm or yarn
-*   Expo Go application installed on a physical iOS/Android device to test without local compilation
+*   Expo Go compatible with SDK 57, or Xcode with an iOS Simulator
 
 ### 1. Clone & Install Dependencies
 
@@ -104,13 +104,13 @@ git clone https://github.com/yourusername/clickmate.git
 cd clickmate
 
 # Install application dependencies
-npm install
+npm ci
 ```
 
 ### 2. Configuration Setup
 
 #### A. Firebase Configuration
-Update `FirebaseSecret.js` with your Firebase project credentials. The file must export a `firebaseSecret` configuration object:
+Create the ignored local `FirebaseSecret.js` using the **Web app configuration** from Firebase Console → Project settings → General → Your apps. The file must export a `firebaseSecret` object. This client config is bundled with the application; do not use an Admin SDK service-account private key here.
 
 ```javascript
 // FirebaseSecret.js
@@ -192,6 +192,16 @@ Start the Metro bundler locally:
 npm start
 ```
 
+To launch the iOS Simulator with Expo Go and clear the Metro cache after an upgrade:
+
+```bash
+npm run ios:go -- --clear
+```
+
+`npm run ios` remains the native-build command and requires an Xcode build. For Expo Go, use `ios:go`.
+
+Run the backend separately on port 5051 and set `EXPO_PUBLIC_IP` in `.env` to this Mac's LAN address. Restart Metro after changing `.env`. A running frontend does not verify MongoDB connectivity: if `/interests` or `/explore` returns HTTP 500, check the backend's `MONGODB_URI` and database connection.
+
 *   Press **`a`** to open the Android emulator.
 *   Press **`i`** to open the iOS simulator.
 *   Press **`w`** to launch the web preview in your browser.
@@ -201,11 +211,14 @@ npm start
 
 ## Testing
 
-To run unit and integration tests setup within the project:
+Validate the Expo SDK dependencies and configuration:
 
 ```bash
-npm run test
+npx expo install --check
+npx expo-doctor
 ```
+
+In the iOS Simulator, check that Login renders, submitting empty fields shows validation, Sign Up opens, and returning to Login works after opening the keyboard. Verify authenticated screens with a test account and a working backend/database.
 
 ---
 

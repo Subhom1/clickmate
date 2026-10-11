@@ -1,7 +1,7 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   ImageBackground,
@@ -10,18 +10,18 @@ import {
   Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router/react-navigation";
 import { IP } from "../../constant";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import Icon from "@expo/vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";
 import { matchState } from "../state/atoms/MatchState";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useAtomValue, useSetAtom } from "jotai";
 import io from "socket.io-client";
 
 export default function ExploreSearch({ route }) {
   const [socket, setSocket] = useState(null);
-  const setMatchResult = useSetRecoilState(matchState);
-  const userData = useRecoilValue(userState);
+  const setMatchResult = useSetAtom(matchState);
+  const userData = useAtomValue(userState);
   const [noResult, setNoResult] = useState(false);
   const navigation = useNavigation();
   const { platform, item, itemTitle } = route.params;

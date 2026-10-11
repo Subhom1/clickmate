@@ -1,7 +1,7 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
-  SafeAreaView,
   Text,
   TouchableOpacity,
   TextInput,
@@ -10,24 +10,24 @@ import {
   Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import Icon from "react-native-vector-icons/FontAwesome5";
-import Icon2 from "react-native-vector-icons/Feather";
+import Icon from "@expo/vector-icons/FontAwesome5";
+import Icon2 from "@expo/vector-icons/Feather";
 import io from "socket.io-client";
 import { userState } from "../state/atoms/UserState";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router/react-navigation";
 import { IP } from "../../constant";
 import ToggleSwitch from "../components/ToggleSwitch.js";
 
 export default function Home({ route }) {
   const [searchText, setSearchText] = useState("");
-  const userData = useRecoilValue(userState);
+  const userData = useAtomValue(userState);
   const [searchLoading, setSearchLoading] = useState(false);
   const [noResult, setNoResult] = useState(false);
   const [socket, setSocket] = useState(null);
   const noResultTimerRef = useRef(null);
-  const setMatchResult = useSetRecoilState(matchState);
+  const setMatchResult = useSetAtom(matchState);
   const navigation = useNavigation();
   const { platform } = route.params;
 

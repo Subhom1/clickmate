@@ -1,5 +1,3 @@
-import { atom } from "recoil";
-export const matchState = atom({
-  key: "matchState",
-  default: null,
-});
+import { atom } from "jotai";
+
+export const matchState = atom(null);

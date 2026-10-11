@@ -1,9 +1,10 @@
-import { View, Text, SafeAreaView, StatusBar, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StatusBar, Pressable } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { IP } from "../../constant";
-import { useNavigation } from "@react-navigation/native";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { useNavigation } from "expo-router/react-navigation";
+import Icon from "@expo/vector-icons/MaterialIcons";
 
 export default function VisitorProfile({ route }) {
   const [visitorData, setVisitorData] = useState(null);

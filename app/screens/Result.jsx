@@ -1,25 +1,25 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   Pressable,
   Alert,
 } from "react-native";
 import React from "react";
 import { StatusBar } from "expo-status-bar";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router/react-navigation";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";
 import { IP } from "../../constant";
 
 export default function Result() {
-  const matchUser = useRecoilValue(matchState);
-  const userData = useRecoilValue(userState);
-  const setChatId = useSetRecoilState(chatState);
+  const matchUser = useAtomValue(matchState);
+  const userData = useAtomValue(userState);
+  const setChatId = useSetAtom(chatState);
   const navigation = useNavigation();
   const matchedUser = matchUser?.user;
 

@@ -1,5 +1,3 @@
-import { atom } from "recoil";
-export const chatState = atom({
-  key: "chatState",
-  default: null,
-});
+import { atom } from "jotai";
+
+export const chatState = atom(null);
