@@ -26,6 +26,12 @@ Below is a summary of the user flow:
 *   **Styling:** A clean and responsive user interface designed with Tailwind CSS and NativeWind.
 *   **Multi-Platform Support:** A single codebase optimized for iOS, Android, and Web deployment.
 
+## Recent Navigation and UI Updates
+
+*   Returning from a chat to the People tab now preserves the active platform context, so navigation continues to work consistently across supported platforms.
+*   The tab navigator accepts platform context from both direct and nested route parameters, preventing navigation errors when screens are opened through different routes.
+*   The People screen uses the standard message icon for chat actions, keeping the conversation entry point consistent with the rest of the messaging UI.
+
 ---
 
 ## Architecture & Data Flow
