@@ -16,12 +16,13 @@ import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";
 import { IP } from "../../constant";
 
-export default function Result() {
+export default function Result({ route }) {
   const matchUser = useAtomValue(matchState);
   const userData = useAtomValue(userState);
   const setChatId = useSetAtom(chatState);
   const navigation = useNavigation();
   const matchedUser = matchUser?.user;
+  const platform = route?.params?.platform;
 
   const createChat = async () => {
     if (!userData?._id || !matchedUser?._id) {
@@ -36,7 +37,7 @@ export default function Result() {
       })
       .then((res) => {
         setChatId(res?.data?._id);
-        navigation.navigate("ChatScreen");
+        navigation.navigate("ChatScreen", { platform });
       })
       .catch((e) => console.error(e, "Error creating chat"));
   };
@@ -83,7 +84,9 @@ export default function Result() {
               Home
             </Text>
           </Pressable> */}
-          <Pressable onPress={() => navigation.navigate("Tab")}>
+          <Pressable
+            onPress={() => navigation.navigate("Tab", { params: { platform } })}
+          >
             <Text className="text-secondary_blue_deep underline">
               New Search
             </Text>

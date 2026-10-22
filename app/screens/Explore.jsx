@@ -27,12 +27,13 @@ export default function Explore({ route }) {
     };
     getExplores();
   }, []);
-  const { platform } = route.params;
+  const platform = route.params?.platform;
   const width = Dimensions.get("window").width;
   const onPressTiles = (item, itemMain) => {
     navigation.navigate("ExploreSearch", {
       item,
       itemTitle: itemMain.category,
+      platform,
     });
   };
   const renderItem = ({ item }) => (

@@ -24,7 +24,7 @@ export default function ExploreSearch({ route }) {
   const userData = useAtomValue(userState);
   const [noResult, setNoResult] = useState(false);
   const navigation = useNavigation();
-  const { platform, item, itemTitle } = route.params;
+  const { platform, item, itemTitle } = route.params ?? {};
   const query = `${itemTitle || ""}`.trim();
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function ExploreSearch({ route }) {
 
       if (match?.user?._id) {
         setMatchResult(match);
-        navigation.navigate("Result");
+        navigation.navigate("Result", { platform });
       } else {
         setMatchResult(null);
         setNoResult(true);
