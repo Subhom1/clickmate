@@ -92,6 +92,7 @@ export const RootLayout = ({ user, platform }) => {
 const Tab = createBottomTabNavigator();
 const MyTabs = ({ route }) => {
   const [userData, setUserData] = useAtom(userState);
+  const platform = route.params?.platform ?? route.params?.params?.platform;
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -117,7 +118,6 @@ const MyTabs = ({ route }) => {
       keyboardDidShowListener.remove();
     };
   }, []);
-  const { platform } = route.params;
   return (
     <Tab.Navigator
       initialRouteName="Home"

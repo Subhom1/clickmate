@@ -92,7 +92,7 @@ export default function People({ route }) {
                   }}
                   className="relative"
                 >
-                  <Icon name="message1" size={23} color="#0C4BA5" />
+                  <Icon name="message" size={23} color="#0C4BA5" />
                   {item?.count > 0 && (
                     <View className="bg-primary_red w-5 h-5 rounded-full justify-center absolute bottom-4 left-4">
                       <Text className="text-white font-bold text-center text-xs">

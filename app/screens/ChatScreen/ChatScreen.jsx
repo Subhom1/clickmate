@@ -127,7 +127,10 @@ const ChatScreen = ({ route }) => {
         <Header
           leftBtnAction={() => {
             socket.emit("leaveChat", { chatId });
-            navigation.navigate("People");
+            navigation.navigate("Tab", {
+              screen: "People",
+              params: { platform },
+            });
           }}
           rightBtnAction={() => {
             clearMessage();
