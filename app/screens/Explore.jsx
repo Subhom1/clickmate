@@ -5,6 +5,8 @@ import {
   StatusBar,
   Dimensions,
   FlatList,
+  ActivityIndicator,
+  Pressable,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useAtom, useSetAtom } from "jotai";
@@ -15,16 +17,28 @@ import CarouselComp from "../components/CarouselComp";
 import { useNavigation } from "expo-router/react-navigation";
 
 export default function Explore({ route }) {
-  const [explores, setExplores] = useAtom(exploreState);
+  const [explores] = useAtom(exploreState);
   const setExploreState = useSetAtom(exploreState);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const navigation = useNavigation();
+
+  const getExplores = async () => {
+    setIsLoading(true);
+    setHasError(false);
+
+    try {
+      const res = await axios.get(`http://${IP}:5051/explore`);
+      setExploreState(res.data);
+    } catch (e) {
+      console.error(e, "Error loading explore activities");
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const getExplores = async () => {
-      await axios
-        .get(`http://${IP}:5051/explore`)
-        .then((res) => setExploreState(res.data))
-        .catch((e) => console.error(e));
-    };
     getExplores();
   }, []);
   const platform = route.params?.platform;
@@ -55,12 +69,33 @@ export default function Explore({ route }) {
       <StatusBar style="auto" />
       <View className={`flex-1 ml-7 ${platform == "ios" ? "mt-5" : "mt-16"} `}>
         <Text className="text-2xl font-bold mb-5">Explore</Text>
-        <FlatList
-          data={explores}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
+        {isLoading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#67AB0F" />
+            <Text className="text-primary_gray mt-3">
+              Loading activities...
+            </Text>
+          </View>
+        ) : hasError ? (
+          <View className="flex-1 justify-center items-center px-8">
+            <Text className="text-primary_gray text-center mb-4">
+              We couldn&apos;t load activities right now.
+            </Text>
+            <Pressable
+              onPress={getExplores}
+              className="bg-primary_green rounded-3xl px-6 py-3"
+            >
+              <Text className="text-white font-medium">Try again</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            data={explores}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
