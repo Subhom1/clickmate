@@ -5,17 +5,21 @@ are verified. One day is attempted per scheduled run. A blocked day resumes
 before the next day begins. Coverage of a module means behavior tests exercise
 its real implementation; a mocked import does not close a checklist gap.
 
-## Daily plan
+## Five-PR rollout plan
 
-| Day | Feature area | Status |
+Each step gets a separate `test/<feature-area>-regression` branch and a focused
+commit. Run the focused tests and `npm run test:all` before pushing each step.
+Each branch builds on the previous step so every later pull request contains the
+complete regression suite. The author will open the pull requests after reviewing
+the generated PR bodies; merge status is tracked separately.
+
+| PR | Feature area | Status |
 | --- | --- | --- |
-| 1 | Foundation, isolated helpers, socket boundary, avatar smoke cases | 13/13 local tests pass; merge pending |
-| 2 | Login, SignUp, AuthContext | Pending |
-| 3 | Explore, ExploreSearch, Result, People | Pending |
-| 4 | Profile, VisitorProfile, Home | Pending |
-| 5 | ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Pending |
-| 6 | CallScreen, shared components, remaining atoms, shell/navigation | Pending |
-| 7 | All checklist gaps, integration, full suite and coverage | Pending |
+| 1 | Authentication: Login, SignUp, AuthContext | In progress |
+| 2 | Discovery: Explore, ExploreSearch, Result, People | Pending |
+| 3 | Profiles and home: Profile, VisitorProfile, Home | Pending |
+| 4 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Pending |
+| 5 | Shared UI, remaining state, app shell, integration and final audit | Pending |
 
 ## Production module checklist
 
@@ -26,10 +30,10 @@ again on Day 7. Add newly discovered production modules here.
 | Module | Planned day | Behavior coverage | Day 7 verified |
 | --- | --- | --- | --- |
 | App.jsx | 6 | Pending | No |
-| AuthContext.jsx | 2 | Pending | No |
+| AuthContext.jsx | 1 | Pending | No |
 | _layout.jsx | 6 | Pending | No |
 | index.js | 6 | Pending (Expo registration) | No |
-| FirebaseConfig.js | 2 | Pending (mock Firebase SDK, never load secrets) | No |
+| FirebaseConfig.js | 1 | Pending (mock Firebase SDK, never load secrets) | No |
 | constant.js | 6 | Pending (environment configuration) | No |
 | app/components/CarouselComp.js | 6 | Pending | No |
 | app/components/CreateAvatar.js | 1, 6 | 7 behavior cases | No |
@@ -41,8 +45,8 @@ again on Day 7. Add newly discovered production modules here.
 | app/screens/People.jsx | 3 | Pending | No |
 | app/screens/Profile.jsx | 4 | Pending | No |
 | app/screens/VisitorProfile.jsx | 4 | Pending | No |
-| app/screens/Login.jsx | 2 | Pending | No |
-| app/screens/SignUp.jsx | 2 | Pending | No |
+| app/screens/Login.jsx | 1 | Pending | No |
+| app/screens/SignUp.jsx | 1 | Pending | No |
 | app/screens/CallScreen.jsx | 6 | Comment-only file; verify no runtime implementation | No |
 | app/screens/ChatScreen/ChatScreen.jsx | 5 | Pending | No |
 | app/screens/ChatScreen/Header.js | 5 | Pending | No |
