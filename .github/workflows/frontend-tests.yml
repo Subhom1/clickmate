@@ -1,7 +1,6 @@
 name: Frontend tests
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 jobs:
@@ -14,4 +13,4 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test -- --runInBand
+      - run: npm run test:all
