@@ -38,3 +38,35 @@ tests/
 - `npm test -- --runInBand` runs the suite once.
 - `npm run test:watch` starts Jest watch mode.
 - `npm run test:coverage -- --runInBand` runs the suite with coverage.
+
+## Sprint infrastructure
+
+- `helpers/renderWithProviders.jsx` renders with a new Jotai store by default.
+  Pass `{ store }` to seed state or share state across an integration flow.
+- `mocks/socket.js` supplies an opt-in socket double. Client `emit` records calls;
+  `serverEmit` delivers events to registered listeners. Create a new instance per
+  test. Mock the socket factory in the feature test, not globally.
+- The Expo transform allowlist includes Jotai because the installed version ships
+  ES modules. Keep the Expo entries when updating this list.
+- Mock FirebaseConfig at the module boundary in screen/context tests; never
+  import local FirebaseSecret configuration or call live services.
+- `SPRINT.md` tracks all production modules and the seven daily feature areas.
+- `.github/workflows/frontend-tests.yml` runs the regression suite for PRs to main
+  and pushes to main using Node 22 and `npm ci`.
+
+Day 1 focused validation:
+
+```sh
+npm test -- --runInBand tests/components/InitialsCircle.test.jsx tests/infrastructure/helpers.test.jsx
+```
+
+Full regression and optional coverage:
+
+```sh
+npm test -- --runInBand
+npm run test:coverage -- --runInBand
+```
+
+Coverage explicitly includes the app shell, entry point, service configuration,
+and every module in `app/`, even when a module has no tests yet. Coverage output
+is ignored by Git. Coverage reporting does not imply checklist completion.
