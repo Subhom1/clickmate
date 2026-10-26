@@ -18,7 +18,7 @@ the generated PR bodies; merge status is tracked separately.
 | 1 | Authentication: Login, SignUp, AuthContext | Pushed (`test/frontend-auth-regression`) |
 | 2 | Discovery: Explore, ExploreSearch, Result, People | Ready to push |
 | 3 | Profiles and home: Profile, VisitorProfile, Home | Ready to push |
-| 4 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Pending |
+| 4 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Ready to push |
 | 5 | Shared UI, remaining state, app shell, integration and final audit | Pending |
 
 ## Production module checklist
@@ -48,11 +48,11 @@ again on Day 7. Add newly discovered production modules here.
 | app/screens/Login.jsx | 1 | 4 validation/navigation cases | No |
 | app/screens/SignUp.jsx | 1 | 5 validation/register cases | No |
 | app/screens/CallScreen.jsx | 6 | Comment-only file; verify no runtime implementation | No |
-| app/screens/ChatScreen/ChatScreen.jsx | 5 | Pending | No |
-| app/screens/ChatScreen/Header.js | 5 | Pending | No |
-| app/screens/ChatScreen/MessagesList.js | 5 | Pending | No |
-| app/screens/ChatScreen/MessageInputBox.js | 5 | Pending | No |
-| app/state/atoms/ChatState.js | 5 | Pending | No |
+| app/screens/ChatScreen/ChatScreen.jsx | 4 | 2 history/live chat cases | No |
+| app/screens/ChatScreen/Header.js | 4 | Covered with chat components | No |
+| app/screens/ChatScreen/MessagesList.js | 4 | Covered with chat components | No |
+| app/screens/ChatScreen/MessageInputBox.js | 4 | Covered with chat components | No |
+| app/state/atoms/ChatState.js | 4 | Covered in ChatScreen | No |
 | app/state/atoms/MatchState.js | 2 | Covered in ExploreSearch | No |
 | app/state/atoms/UserState.js | 6 | Pending | No |
 | app/state/atoms/ExploreState.js | 6 | Pending | No |
@@ -86,4 +86,7 @@ PR 2 focused validation on 2026-10-26: discovery tests passed 4 suites / 13 test
 full regression passed 8 suites / 37 tests; `git diff --check` passed.
 
 PR 3 focused validation on 2026-10-26: profile and home tests passed 3 suites / 11 tests;
+full regression passed 11 suites / 48 tests; `git diff --check` passed.
+
+PR 4 focused validation on 2026-10-26: chat tests passed 2 suites / 5 tests;
 full regression result recorded before push.
