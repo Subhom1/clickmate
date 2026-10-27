@@ -35,6 +35,7 @@ tests/
 
 ## Commands
 
+- `npm run test:all` runs every frontend test once, serially.
 - `npm test -- --runInBand` runs the suite once.
 - `npm run test:watch` starts Jest watch mode.
 - `npm run test:coverage -- --runInBand` runs the suite with coverage.
@@ -63,7 +64,7 @@ npm test -- --runInBand tests/components/InitialsCircle.test.jsx tests/infrastru
 Full regression and optional coverage:
 
 ```sh
-npm test -- --runInBand
+npm run test:all
 npm run test:coverage -- --runInBand
 ```
 
