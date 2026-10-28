@@ -14,8 +14,8 @@ Existing later-day branches are drafts of future work, not completed sprint days
 | Day | Feature area | Status |
 | --- | --- | --- |
 | 1 | Infrastructure, helpers and avatar smoke coverage | Complete: PR #2 merged and verified |
-| 2 | Authentication: Login, SignUp, AuthContext | 17 focused / 30 total passed; CI and merge pending |
-| 3 | Discovery: Explore, ExploreSearch, Result, People | Pending |
+| 2 | Authentication: Login, SignUp, AuthContext | Complete: PR #3 merged and verified |
+| 3 | Discovery: Explore, ExploreSearch, Result, People | 19 focused / 49 total passed; CI and merge pending |
 | 4 | Profiles and home: Profile, VisitorProfile, Home | Pending |
 | 5 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Pending |
 | 6 | Call screen, shared UI, remaining state, app shell | Pending |
@@ -39,10 +39,10 @@ again on Day 7. Add newly discovered production modules here.
 | app/components/CreateAvatar.js | 1, 6 | 7 behavior cases | No |
 | app/components/ToggleSwitch.js | 6 | Pending | No |
 | app/screens/Home.jsx | 4 | Pending | No |
-| app/screens/Explore.jsx | 3 | Pending | No |
-| app/screens/ExploreSearch.jsx | 3 | Pending | No |
-| app/screens/Result.jsx | 3 | Pending | No |
-| app/screens/People.jsx | 3 | Pending | No |
+| app/screens/Explore.jsx | 3 | 4 cases: loading, category navigation, retry and cache replacement | No |
+| app/screens/ExploreSearch.jsx | 3 | 7 cases: socket search, matches, retry, cancellation and cleanup | No |
+| app/screens/Result.jsx | 3 | 4 cases: chat creation, missing match, new search and failure/retry | No |
+| app/screens/People.jsx | 3 | 4 cases: empty state, friend navigation, unread updates and recovery | No |
 | app/screens/Profile.jsx | 4 | Pending | No |
 | app/screens/VisitorProfile.jsx | 4 | Pending | No |
 | app/screens/Login.jsx | 2 | 6 validation, loading, failure/retry and navigation cases | No |
@@ -98,3 +98,24 @@ Validation on 2026-10-27: `npm test -- --runInBand tests/screens/auth`
 passed 2 suites / 17 tests; `npm run test:all` passed 4 suites / 30 tests;
 `git diff --check` passed. CI and merge verification are recorded in automation
 memory after completion. No coverage or visual checks were run for Day 2.
+
+
+## Day 3 discovery
+
+Integrated the current main authentication baseline into the existing discovery
+branch without rewriting history. Retained 13 draft cases and added 6 new distinct
+behaviors this run: Explore replaces cached categories; ExploreSearch clears stale
+matches on malformed results, rejects disconnected retry, and exits a disconnected
+search without emitting cancellation; Result preserves existing chat state on
+failure and retries successfully; People preserves friends on unread-request
+failure and recovers through a socket event.
+
+Relative to main: 19 discovery cases (Explore 4, ExploreSearch 7, Result 4,
+People 4). Tests use isolated real Jotai stores and explicit mock socket server
+events. Consumer tests exercise ExploreState, MatchState, UserState and ChatState
+transitions, but their dedicated audit remains on the planned days.
+
+Validation on 2026-10-28: `npm test -- --runInBand tests/screens/explore`
+passed 4 suites / 19 tests. `npm run test:all` passed 8 suites / 49 tests.
+`git diff --check` passed. CI and verified merge are recorded in automation memory
+after completion. No production/UI changes, coverage run or visual check.

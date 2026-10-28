@@ -71,3 +71,10 @@ npm run test:coverage -- --runInBand
 Coverage explicitly includes the app shell, entry point, service configuration,
 and every module in `app/`, even when a module has no tests yet. Coverage output
 is ignored by Git. Coverage reporting does not imply checklist completion.
+
+
+Day 3 discovery focused validation (Explore, ExploreSearch, Result, People):
+
+```sh
+npm test -- --runInBand tests/screens/explore
+```
