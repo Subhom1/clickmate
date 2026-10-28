@@ -1,7 +1,7 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Provider, createStore, useAtomValue } from "jotai";
-import { Text } from "react-native";
+import { Alert, Text } from "react-native";
 import io from "socket.io-client";
 import ExploreSearch from "../../../app/screens/ExploreSearch";
 import { userState } from "../../../app/state/atoms/UserState";
@@ -50,6 +50,8 @@ const renderSearch = async ({ user = { _id: "me-1" } } = {}) => {
   );
   return { ...view, store };
 };
+
+afterEach(() => jest.restoreAllMocks());
 
 describe("ExploreSearch", () => {
   it("submits a search when the socket connects", async () => {
@@ -101,4 +103,37 @@ describe("ExploreSearch", () => {
     expect(mockSocket.off).toHaveBeenCalledWith("error");
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
   });
+});
+
+
+it("clears an earlier match when the server returns an invalid match", async () => {
+  const { store } = await renderSearch();
+  await act(async () => store.set(matchState, { user: { _id: "old", fullname: "Old match" } }));
+  await act(async () => mockSocket.serverEmit("search_update", { matches: { user: { fullname: "Missing id" } } }));
+
+  expect(store.get(matchState)).toBeNull();
+  expect(screen.getByText("no match")).toBeOnTheScreen();
+  expect(screen.getByText(/No Users found/)).toBeOnTheScreen();
+  expect(mockNavigation.navigate).not.toHaveBeenCalled();
+});
+
+it("keeps the no-result state when retrying a disconnected socket", async () => {
+  jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  await renderSearch();
+  await act(async () => mockSocket.serverEmit("search_update", { matches: null }));
+  mockSocket.connected = false;
+  await fireEvent.press(screen.getByText("Try again"));
+
+  expect(Alert.alert).toHaveBeenCalledWith("Connection unavailable", "Please try again in a moment");
+  expect(mockSocket.emit).not.toHaveBeenCalled();
+  expect(screen.getByText(/No Users found/)).toBeOnTheScreen();
+});
+
+it("returns from a disconnected search without sending cancellation", async () => {
+  await renderSearch();
+  mockSocket.connected = false;
+  await fireEvent.press(screen.getByText("Cancel"));
+
+  expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
+  expect(mockSocket.emit).not.toHaveBeenCalled();
 });

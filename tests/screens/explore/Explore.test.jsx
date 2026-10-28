@@ -38,6 +38,8 @@ const renderExplore = async (initialData = null) => {
   return { ...view, store };
 };
 
+afterEach(() => jest.restoreAllMocks());
+
 describe("Explore", () => {
   it("shows a loading state while fetching activities", async () => {
     axios.get.mockReturnValue(new Promise(() => {}));
@@ -73,4 +75,14 @@ describe("Explore", () => {
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByText("Try again")).toBeNull());
   });
+});
+
+
+it("replaces cached categories after a fresh response", async () => {
+  axios.get.mockResolvedValue({ data: [{ category: "movies", list: [{ text: "New movie" }] }] });
+  const { store } = await renderExplore([{ category: "hikes", list: [{ text: "Old hike" }] }]);
+
+  expect(await screen.findByText("New movie")).toBeOnTheScreen();
+  expect(screen.queryByText("Old hike")).toBeNull();
+  expect(store.get(exploreState)).toEqual([{ category: "movies", list: [{ text: "New movie" }] }]);
 });
