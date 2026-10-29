@@ -15,6 +15,7 @@ tests/
     auth/
     explore/
     profile/
+    home/
     chat/
     call/
   state/          Jotai atoms and state transitions
@@ -77,4 +78,11 @@ Day 3 discovery focused validation (Explore, ExploreSearch, Result, People):
 
 ```sh
 npm test -- --runInBand tests/screens/explore
+```
+
+
+Day 4 profiles and home focused validation (Profile, VisitorProfile, Home):
+
+```sh
+npm test -- --runInBand tests/screens/profile tests/screens/home
 ```

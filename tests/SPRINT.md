@@ -15,8 +15,8 @@ Existing later-day branches are drafts of future work, not completed sprint days
 | --- | --- | --- |
 | 1 | Infrastructure, helpers and avatar smoke coverage | Complete: PR #2 merged and verified |
 | 2 | Authentication: Login, SignUp, AuthContext | Complete: PR #3 merged and verified |
-| 3 | Discovery: Explore, ExploreSearch, Result, People | 19 focused / 49 total passed; CI and merge pending |
-| 4 | Profiles and home: Profile, VisitorProfile, Home | Pending |
+| 3 | Discovery: Explore, ExploreSearch, Result, People | Complete: PR #4 merged and verified |
+| 4 | Profiles and home: Profile, VisitorProfile, Home | 17 focused / 66 total passed; CI and merge pending |
 | 5 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Pending |
 | 6 | Call screen, shared UI, remaining state, app shell | Pending |
 | 7 | Checklist gaps, integration, regression and coverage audit | Pending |
@@ -38,13 +38,13 @@ again on Day 7. Add newly discovered production modules here.
 | app/components/CarouselComp.js | 6 | Pending | No |
 | app/components/CreateAvatar.js | 1, 6 | 7 behavior cases | No |
 | app/components/ToggleSwitch.js | 6 | Pending | No |
-| app/screens/Home.jsx | 4 | Pending | No |
+| app/screens/Home.jsx | 4 | 7 cases: validation, submit/cancel, connection, matches, errors, tags and feedback expiry | No |
 | app/screens/Explore.jsx | 3 | 4 cases: loading, category navigation, retry and cache replacement | No |
 | app/screens/ExploreSearch.jsx | 3 | 7 cases: socket search, matches, retry, cancellation and cleanup | No |
 | app/screens/Result.jsx | 3 | 4 cases: chat creation, missing match, new search and failure/retry | No |
 | app/screens/People.jsx | 3 | 4 cases: empty state, friend navigation, unread updates and recovery | No |
-| app/screens/Profile.jsx | 4 | Pending | No |
-| app/screens/VisitorProfile.jsx | 4 | Pending | No |
+| app/screens/Profile.jsx | 4 | 7 cases: display/logout, validation, editing, deletion and failure recovery | No |
+| app/screens/VisitorProfile.jsx | 4 | 3 cases: profile/back navigation, missing email and visitor route changes | No |
 | app/screens/Login.jsx | 2 | 6 validation, loading, failure/retry and navigation cases | No |
 | app/screens/SignUp.jsx | 2 | 7 validation, pending, rejection and registration cases | No |
 | app/screens/CallScreen.jsx | 6 | Comment-only file; verify no runtime implementation | No |
@@ -119,3 +119,21 @@ Validation on 2026-10-28: `npm test -- --runInBand tests/screens/explore`
 passed 4 suites / 19 tests. `npm run test:all` passed 8 suites / 49 tests.
 `git diff --check` passed. CI and verified merge are recorded in automation memory
 after completion. No production/UI changes, coverage run or visual check.
+
+
+## Day 4 profiles and home
+
+Integrated current main into the existing profile branch without rewriting history.
+Kept the 11 draft cases and added 6 new behavior cases this run: Profile retains
+its session on sign-out failure, preserves edits for update retry, and preserves
+the account when backend deletion fails; VisitorProfile reloads on route email
+changes and removes old interests; Home submits a suggested tag and clears stale
+matches while expiring no-result feedback at ten seconds. Reset profile service
+mocks and Firebase currentUser between cases; restore Home fake timers.
+
+Relative to main: 17 new cases (Profile 7, VisitorProfile 3, Home 7).
+Validation on 2026-10-29: `npm test -- --runInBand tests/screens/profile tests/screens/home`
+passed 3 suites / 17 tests. `npm run test:all` passed 11 suites / 66 tests.
+`git diff --check` passed. CI and verified merge are recorded in automation memory
+after completion. No production/UI changes, coverage run or visual check.
+Days 5–7 remain pending, including the final module and coverage audit.
