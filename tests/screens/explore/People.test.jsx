@@ -36,6 +36,8 @@ const renderPeople = async (user = { _id: "me-1", friends }) => {
   return { ...view, store };
 };
 
+afterEach(() => jest.restoreAllMocks());
+
 describe("People", () => {
   it("shows an empty state when there are no friends", async () => {
     axios.get.mockResolvedValue({ data: [] });
@@ -71,4 +73,20 @@ describe("People", () => {
     expect(mockSocket.off).toHaveBeenCalledWith("updateUnreadCounts");
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
   });
+});
+
+
+it("preserves friends after an unread request fails and recovers on a socket update", async () => {
+  const error = new Error("offline");
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  axios.get.mockRejectedValueOnce(error).mockResolvedValueOnce({ data: [{ userId: "friend-1", count: 3 }] });
+  const { store } = await renderPeople();
+
+  await waitFor(() => expect(console.error).toHaveBeenCalledWith(error));
+  expect(screen.getByText("Alex Friend")).toBeOnTheScreen();
+  expect(store.get(userState).friends).toEqual(friends);
+
+  await act(async () => mockSocket.serverEmit("updateUnreadCounts"));
+  expect(await screen.findByText("3")).toBeOnTheScreen();
+  expect(store.get(userState).friends[0].count).toBe(3);
 });
