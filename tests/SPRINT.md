@@ -16,8 +16,8 @@ Existing later-day branches are drafts of future work, not completed sprint days
 | 1 | Infrastructure, helpers and avatar smoke coverage | Complete: PR #2 merged and verified |
 | 2 | Authentication: Login, SignUp, AuthContext | Complete: PR #3 merged and verified |
 | 3 | Discovery: Explore, ExploreSearch, Result, People | Complete: PR #4 merged and verified |
-| 4 | Profiles and home: Profile, VisitorProfile, Home | 17 focused / 66 total passed; CI and merge pending |
-| 5 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Pending |
+| 4 | Profiles and home: Profile, VisitorProfile, Home | Complete: PR #5 merged and verified |
+| 5 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | 13 focused / 79 total passed; CI and merge pending |
 | 6 | Call screen, shared UI, remaining state, app shell | Pending |
 | 7 | Checklist gaps, integration, regression and coverage audit | Pending |
 
@@ -48,11 +48,11 @@ again on Day 7. Add newly discovered production modules here.
 | app/screens/Login.jsx | 2 | 6 validation, loading, failure/retry and navigation cases | No |
 | app/screens/SignUp.jsx | 2 | 7 validation, pending, rejection and registration cases | No |
 | app/screens/CallScreen.jsx | 6 | Comment-only file; verify no runtime implementation | No |
-| app/screens/ChatScreen/ChatScreen.jsx | 5 | Pending | No |
-| app/screens/ChatScreen/Header.js | 5 | Pending | No |
-| app/screens/ChatScreen/MessagesList.js | 5 | Pending | No |
-| app/screens/ChatScreen/MessageInputBox.js | 5 | Pending | No |
-| app/state/atoms/ChatState.js | 5 | Pending | No |
+| app/screens/ChatScreen/ChatScreen.jsx | 5 | 7 cases: history, send/receive, match exit/cleanup, empty send, server echo, fetched chat ID, failures and clear confirmation | No |
+| app/screens/ChatScreen/Header.js | 5 | Back and clear actions plus recipient display | No |
+| app/screens/ChatScreen/MessagesList.js | 5 | Incoming/outgoing display and cleared-history replacement | No |
+| app/screens/ChatScreen/MessageInputBox.js | 5 | Send/reset and independent successive drafts | No |
+| app/state/atoms/ChatState.js | 5 | Session isolation/reset plus fetched chat ID and failed-fetch preservation | No |
 | app/state/atoms/MatchState.js | 6 | Pending | No |
 | app/state/atoms/UserState.js | 6 | Pending | No |
 | app/state/atoms/ExploreState.js | 6 | Pending | No |
@@ -137,3 +137,25 @@ passed 3 suites / 17 tests. `npm run test:all` passed 11 suites / 66 tests.
 `git diff --check` passed. CI and verified merge are recorded in automation memory
 after completion. No production/UI changes, coverage run or visual check.
 Days 5–7 remain pending, including the final module and coverage audit.
+
+
+## Day 5 messaging
+
+Integrated current main into the existing chat branch without rewriting history.
+Preserved the five draft cases and added eight distinct cases this run: empty
+send rejection, server-confirmed outgoing display without local echo, fetched
+chat ID used for sending, history failure preserving selection without joining,
+clear confirmation reloading history with toast expiry, successive independent
+input drafts, cleared message-list replacement, and ChatState session isolation
+with reset. Tests exercise the real ChatScreen, Header, MessagesList,
+MessageInputBox and ChatState implementations. Reset HTTP mocks between tests
+and restore spies/timers. No production or UI changes.
+
+Relative to main: 13 new messaging cases (ChatScreen 7, chat components 5,
+ChatState 1). Eight were written during this run; five came from the draft branch.
+Focused validation on 2026-10-30:
+`npm test -- --runInBand tests/screens/chat tests/state/ChatState.test.js`
+passed 3 suites / 13 tests. `npm run test:all` passed 14 suites / 79 tests.
+`git diff --check` passed. No coverage run or visual check was performed.
+CI and verified merge are recorded in automation memory after completion.
+Days 6–7 remain pending, including the final module and coverage audit.
