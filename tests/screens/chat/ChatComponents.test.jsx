@@ -51,4 +51,28 @@ describe("Chat components", () => {
     expect(screen.getByText("Hi from me")).toBeOnTheScreen();
     expect(screen.getByText("AF")).toBeOnTheScreen();
   });
+
+  it("sends successive drafts independently without reusing the previous message", async () => {
+    const addNewMessage = jest.fn();
+    await render(<MessageInputBox addNewMessage={addNewMessage} />);
+    await fireEvent.changeText(screen.getByPlaceholderText("Message..."), "First draft");
+    await fireEvent.press(screen.getByText("Send"));
+    await fireEvent.changeText(screen.getByPlaceholderText("Message..."), "Second draft");
+    await fireEvent.press(screen.getByText("Send"));
+
+    expect(addNewMessage.mock.calls).toEqual([["First draft"], ["Second draft"]]);
+    expect(screen.getByPlaceholderText("Message...").props.value).toBe("");
+  });
+
+  it("replaces displayed history and removes incoming avatars when the list is cleared", async () => {
+    const view = await render(<MessagesList fullName="Alex Friend" messagesHistory={[{ from: "1", content: "Old reply" }]} />);
+    expect(screen.getByText("Old reply")).toBeOnTheScreen();
+    expect(screen.getByText("AF")).toBeOnTheScreen();
+
+    await view.rerender(<MessagesList fullName="Alex Friend" messagesHistory={[]} />);
+
+    expect(screen.queryByText("Old reply")).toBeNull();
+    expect(screen.queryByText("AF")).toBeNull();
+  });
+
 });

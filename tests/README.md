@@ -86,3 +86,11 @@ Day 4 profiles and home focused validation (Profile, VisitorProfile, Home):
 ```sh
 npm test -- --runInBand tests/screens/profile tests/screens/home
 ```
+
+
+Day 5 messaging focused validation (ChatScreen, Header, MessagesList,
+MessageInputBox, ChatState):
+
+```sh
+npm test -- --runInBand tests/screens/chat tests/state/ChatState.test.js
+```
