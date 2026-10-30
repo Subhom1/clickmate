@@ -68,3 +68,22 @@ describe("Result", () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith("Tab", { params: { platform: "ios" } });
   });
 });
+
+
+it("preserves the current chat on request failure and allows a successful retry", async () => {
+  const error = new Error("offline");
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  axios.post.mockRejectedValueOnce(error).mockResolvedValueOnce({ data: { _id: "retry-chat" } });
+  const { store } = await renderResult({ user: { _id: "me-1" }, matchedUser: { _id: "friend-1", fullname: "Alex Friend" } });
+  store.set(chatState, "existing-chat");
+
+  await fireEvent.press(screen.getByText("Chat"));
+  await waitFor(() => expect(console.error).toHaveBeenCalledWith(error, "Error creating chat"));
+  expect(store.get(chatState)).toBe("existing-chat");
+  expect(mockNavigation.navigate).not.toHaveBeenCalled();
+
+  await fireEvent.press(screen.getByText("Chat"));
+  await waitFor(() => expect(store.get(chatState)).toBe("retry-chat"));
+  expect(axios.post).toHaveBeenCalledTimes(2);
+  expect(mockNavigation.navigate).toHaveBeenCalledTimes(1);
+});
