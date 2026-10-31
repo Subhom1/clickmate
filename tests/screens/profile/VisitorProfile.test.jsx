@@ -13,7 +13,7 @@ jest.mock("@expo/vector-icons/MaterialIcons", () => {
   return ({ name }) => React.createElement(Text, null, name);
 });
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => jest.resetAllMocks());
 
 describe("VisitorProfile", () => {
   it("loads a visitor profile and returns to the previous screen", async () => {
@@ -42,4 +42,28 @@ describe("VisitorProfile", () => {
     await waitFor(() => expect(axios.get).not.toHaveBeenCalled());
     expect(screen.queryByText("Interests")).toBeNull();
   });
+});
+
+
+it("reloads the selected visitor when the route email changes and hides empty interests", async () => {
+  axios.get.mockResolvedValueOnce({ data: {
+    fullname: "Alex Friend", bio: "First visitor", interests: [{ _id: "i-1", text: "Hiking" }],
+  } }).mockResolvedValueOnce({ data: {
+    fullname: "Sam Friend", bio: "Second visitor", interests: [],
+  } });
+  const view = await render(
+    <VisitorProfile route={{ params: { userEmail: "alex@example.com", platform: "ios" } }} />
+  );
+  expect(await screen.findByText("Hiking")).toBeOnTheScreen();
+
+  await view.rerender(
+    <VisitorProfile route={{ params: { userEmail: "sam@example.com", platform: "ios" } }} />
+  );
+  expect(await screen.findByText("Sam Friend")).toBeOnTheScreen();
+  expect(screen.getByText("Second visitor")).toBeOnTheScreen();
+  expect(screen.queryByText("Alex Friend")).toBeNull();
+  expect(screen.queryByText("Hiking")).toBeNull();
+  expect(screen.queryByText("Interests")).toBeNull();
+  expect(axios.get).toHaveBeenCalledTimes(2);
+  expect(axios.get).toHaveBeenLastCalledWith("http://localhost:5051/user/sam@example.com");
 });

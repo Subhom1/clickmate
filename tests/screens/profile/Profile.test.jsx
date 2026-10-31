@@ -18,7 +18,9 @@ jest.mock("@expo/vector-icons/Feather", () => {
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.resetAllMocks();
+  Auth.currentUser = null;
+  jest.spyOn(console, "error").mockImplementation(() => {});
   signOut.mockResolvedValue(undefined);
   jest.spyOn(console, "log").mockImplementation(() => {});
   axios.get.mockResolvedValue({ data: [{ _id: "i-1", text: "Hiking" }, { _id: "i-2", text: "Movies" }] });
@@ -106,5 +108,57 @@ describe("Profile", () => {
     );
     expect(store.get(userState)).toEqual(updatedUser);
     expect(screen.getByText("Casey New")).toBeOnTheScreen();
+  });
+});
+
+
+describe("Profile failure recovery", () => {
+  it("keeps the current session when sign out fails", async () => {
+    const error = new Error("Sign out unavailable");
+    signOut.mockRejectedValueOnce(error);
+    const { store } = await renderProfile();
+    await fireEvent.press(screen.getByText("Logout"));
+
+    await waitFor(() => expect(console.error).toHaveBeenCalledWith(error));
+    expect(store.get(userState)).toEqual(initialUser);
+    expect(screen.getByText("Casey User")).toBeOnTheScreen();
+  });
+
+  it("retains unsaved edits on update failure and saves them on retry", async () => {
+    const error = new Error("Update unavailable");
+    const updatedUser = { ...initialUser, fullname: "Casey New" };
+    axios.patch.mockRejectedValueOnce(error).mockResolvedValueOnce({ data: updatedUser });
+    const { store } = await renderProfile();
+    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), "Casey New");
+    await fireEvent.press(screen.getByText("Update"));
+
+    await waitFor(() => expect(console.error).toHaveBeenCalledWith(error, "Error updating user data"));
+    expect(store.get(userState)).toEqual(initialUser);
+    expect(screen.getByPlaceholderText("Enter your full name")).toHaveDisplayValue("Casey New");
+    await fireEvent.press(screen.getByText("Update"));
+
+    await waitFor(() => expect(screen.getByText("Casey New")).toBeOnTheScreen());
+    expect(axios.patch).toHaveBeenCalledTimes(2);
+    expect(axios.patch).toHaveBeenLastCalledWith("http://localhost:5051/user/me-1", {
+      fullname: "Casey New", bio: initialUser.bio, interests: ["i-1"],
+    });
+    expect(store.get(userState)).toEqual(updatedUser);
+    expect(screen.queryByPlaceholderText("Enter your full name")).toBeNull();
+  });
+
+  it("preserves the account and skips Firebase deletion when backend deletion fails", async () => {
+    const error = new Error("Delete unavailable");
+    const deleteUser = jest.fn();
+    Auth.currentUser = { uid: "firebase-1", delete: deleteUser };
+    axios.delete.mockRejectedValueOnce(error);
+    const { store } = await renderProfile();
+    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByText("Delete Account"));
+
+    await waitFor(() => expect(console.error).toHaveBeenCalledWith("Error deleting user account:", error));
+    expect(deleteUser).not.toHaveBeenCalled();
+    expect(store.get(userState)).toEqual(initialUser);
+    expect(screen.getByPlaceholderText("Enter your full name")).toHaveDisplayValue(initialUser.fullname);
   });
 });

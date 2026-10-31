@@ -1,6 +1,6 @@
 import React from "react";
 import { Alert } from "react-native";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Provider } from "jotai";
 import Login from "../../../app/screens/Login";
 import Signup from "../../../app/screens/SignUp";
@@ -34,7 +34,8 @@ jest.mock("expo-font", () => ({ useFonts: () => [true] }));
 jest.mock("expo-web-browser", () => ({}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.resetAllMocks();
+  jest.spyOn(console, "error").mockImplementation(() => {});
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
   global.alert = jest.fn();
 });
@@ -81,6 +82,35 @@ describe("Login", () => {
       expect(signInWithEmailAndPassword).toHaveBeenCalledWith({}, "user@example.com", "secret")
     );
     await waitFor(() => expect(screen.getByText("Login")).toBeTruthy());
+  });
+
+  it("keeps the form hidden while sign in is pending, then restores it", async () => {
+    let resolveSignIn;
+    signInWithEmailAndPassword.mockReturnValue(new Promise((resolve) => { resolveSignIn = resolve; }));
+    await render(<Login />);
+    await fireEvent.changeText(screen.getByPlaceholderText("Enter your email"), "user@example.com");
+    await fireEvent.changeText(screen.getByPlaceholderText("Enter your password"), "secret");
+    await fireEvent.press(screen.getByText("Login"));
+
+    expect(screen.queryByPlaceholderText("Enter your password")).toBeNull();
+    await act(async () => { resolveSignIn({ user: { uid: "u-1" } }); });
+    expect(screen.getByPlaceholderText("Enter your email")).toHaveProp("value", "user@example.com");
+  });
+
+  it("reports a rejected sign in and lets the user retry successfully", async () => {
+    const error = new Error("Invalid credentials");
+    signInWithEmailAndPassword.mockRejectedValueOnce(error).mockResolvedValueOnce({ user: { uid: "u-1" } });
+    await render(<Login />);
+    await fireEvent.changeText(screen.getByPlaceholderText("Enter your email"), "user@example.com");
+    await fireEvent.changeText(screen.getByPlaceholderText("Enter your password"), "secret");
+    await fireEvent.press(screen.getByText("Login"));
+
+    await waitFor(() => expect(global.alert).toHaveBeenCalledWith("Sign In failed: Invalid credentials"));
+    expect(screen.getByPlaceholderText("Enter your password")).toHaveProp("value", "secret");
+    await fireEvent.press(screen.getByText("Login"));
+    await waitFor(() => expect(screen.getByText("Login")).toBeOnTheScreen());
+    expect(signInWithEmailAndPassword).toHaveBeenCalledTimes(2);
+    expect(global.alert).toHaveBeenCalledTimes(1);
   });
 
   it("navigates to sign up", async () => {
@@ -134,6 +164,35 @@ describe("Sign up", () => {
 
     expect(screen.getByText("*password is too short")).toBeTruthy();
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
+  });
+
+  it("blocks profile registration until account creation completes", async () => {
+    let resolveSignup;
+    createUserWithEmailAndPassword.mockReturnValue(new Promise((resolve) => { resolveSignup = resolve; }));
+    axios.post.mockResolvedValue({ data: { data: { name: "Casey User" } } });
+    await renderSignup();
+    await fillSignup();
+    await fireEvent.press(screen.getByText("Sign Up"));
+
+    expect(screen.queryByText("Sign Up")).toBeNull();
+    expect(axios.post).not.toHaveBeenCalled();
+    expect(global.alert).not.toHaveBeenCalled();
+    await act(async () => { resolveSignup({ user: { uid: "u-2" } }); });
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Sign Up")).toBeOnTheScreen();
+  });
+
+  it("reports account creation failure without registering a profile", async () => {
+    createUserWithEmailAndPassword.mockRejectedValue(new Error("Email already in use"));
+    await renderSignup();
+    await fillSignup();
+    await fireEvent.press(screen.getByText("Sign Up"));
+
+    await waitFor(() => expect(global.alert).toHaveBeenCalledWith("Registration failed: Email already in use"));
+    expect(axios.post).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText("Enter your full name")).toHaveProp("value", "Casey User");
+    expect(screen.getByText("Sign Up")).toBeOnTheScreen();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("creates an account, registers the profile, and navigates back to login", async () => {

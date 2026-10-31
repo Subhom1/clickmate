@@ -2,7 +2,7 @@ import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Provider, createStore } from "jotai";
 import axios from "axios";
-import io from "socket.io-client";
+import Toast from "react-native-root-toast";
 import ChatScreen from "../../../app/screens/ChatScreen/ChatScreen";
 import { userState } from "../../../app/state/atoms/UserState";
 import { matchState } from "../../../app/state/atoms/MatchState";
@@ -28,8 +28,14 @@ jest.mock("@expo/vector-icons/MaterialIcons", () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  axios.get.mockReset();
   mockSocket = createSocketMock();
   mockSocket.connected = true;
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  jest.useRealTimers();
 });
 
 const renderChat = async ({ matchedUser = false } = {}) => {
@@ -110,4 +116,85 @@ describe("ChatScreen", () => {
       expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/user/me@example.com")
     );
   });
+
+  it("rejects an empty draft without sending a socket message", async () => {
+    axios.get.mockResolvedValue({ data: { _id: "chat-1", messages: [] } });
+    await renderChat();
+    await waitFor(() => expect(mockSocket.emit).toHaveBeenCalledWith("joinChat", { chatId: "chat-1" }));
+    mockSocket.emit.mockClear();
+
+    await fireEvent.press(screen.getByText("Send"));
+
+    expect(mockSocket.emit).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText("Message...").props.value).toBe("");
+  });
+
+  it("shows an outgoing message only after the server broadcasts it", async () => {
+    axios.get.mockResolvedValue({ data: { _id: "chat-1", messages: [] } });
+    await renderChat();
+    await waitFor(() => expect(mockSocket.emit).toHaveBeenCalledWith("joinChat", { chatId: "chat-1" }));
+    await fireEvent.changeText(screen.getByPlaceholderText("Message..."), "Server confirmed");
+    await fireEvent.press(screen.getByText("Send"));
+    expect(mockSocket.emit).toHaveBeenCalledWith("sendMessage", {
+      chatId: "chat-1", message: { sender: "me-1", content: "Server confirmed" },
+    });
+    expect(screen.queryByText("Server confirmed")).toBeNull();
+
+    await act(async () => {
+      mockSocket.serverEmit("receiveMessage", { sender: "me-1", content: "Server confirmed" });
+    });
+
+    expect(screen.getAllByText("Server confirmed")).toHaveLength(1);
+    expect(screen.queryByText("AF")).toBeNull();
+  });
+
+  it("replaces the selected chat atom with the fetched ID and uses it for sending", async () => {
+    axios.get.mockResolvedValue({ data: { _id: "resolved-chat", messages: [] } });
+    const { store } = await renderChat();
+    await waitFor(() => expect(store.get(chatState)).toBe("resolved-chat"));
+
+    await fireEvent.changeText(screen.getByPlaceholderText("Message..."), "Correct room");
+    await fireEvent.press(screen.getByText("Send"));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith("sendMessage", {
+      chatId: "resolved-chat", message: { sender: "me-1", content: "Correct room" },
+    });
+    expect(mockSocket.emit).toHaveBeenCalledWith("joinChat", { chatId: "resolved-chat" });
+  });
+
+  it("preserves the selected chat and avoids joining when history fails", async () => {
+    const error = new Error("History unavailable");
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    axios.get.mockRejectedValue(error);
+    const { store } = await renderChat();
+
+    await waitFor(() => expect(console.error).toHaveBeenCalledWith(error, "fetch chat error"));
+
+    expect(store.get(chatState)).toBe("chat-1");
+    expect(screen.getByText("Alex Friend")).toBeOnTheScreen();
+    expect(mockSocket.emit).not.toHaveBeenCalledWith("joinChat", expect.anything());
+    expect(mockSocket.emit).not.toHaveBeenCalledWith("markAsRead", expect.anything());
+  });
+
+  it("reloads cleared history after server confirmation and expires the toast", async () => {
+    jest.useFakeTimers();
+    axios.get
+      .mockResolvedValueOnce({ data: { _id: "chat-1", messages: [{ sender: "friend-1", content: "Old history" }] } })
+      .mockResolvedValueOnce({ data: { _id: "chat-1", messages: [] } });
+    await renderChat();
+    expect(await screen.findByText("Old history")).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByText("delete"));
+    expect(screen.getByText("Old history")).toBeOnTheScreen();
+    await act(async () => mockSocket.serverEmit("messagesCleared"));
+
+    await waitFor(() => expect(screen.queryByText("Old history")).toBeNull());
+    expect(axios.get).toHaveBeenCalledTimes(2);
+    expect(Toast.show).toHaveBeenCalledWith("All chats cleared", expect.objectContaining({ duration: 3000 }));
+    await act(async () => jest.advanceTimersByTime(4999));
+    expect(Toast.hide).not.toHaveBeenCalled();
+    await act(async () => jest.advanceTimersByTime(1));
+    expect(Toast.hide).toHaveBeenCalledWith("toast-1");
+  });
+
 });

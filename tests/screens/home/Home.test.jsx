@@ -1,8 +1,7 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { Alert, Text } from "react-native";
 import { Provider, createStore, useAtomValue } from "jotai";
-import io from "socket.io-client";
 import Home from "../../../app/screens/Home";
 import { userState } from "../../../app/state/atoms/UserState";
 import { matchState } from "../../../app/state/atoms/MatchState";
@@ -38,7 +37,10 @@ beforeEach(() => {
   mockSocket = createSocketMock();
   mockSocket.connected = true;
 });
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  jest.useRealTimers();
+  jest.restoreAllMocks();
+});
 
 const renderHome = async ({ user = { _id: "me-1" }, connected = true } = {}) => {
   mockSocket.connected = connected;
@@ -118,4 +120,32 @@ describe("Home search", () => {
     expect(mockSocket.off).toHaveBeenCalledWith("error");
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
   });
+});
+
+
+it("uses a suggested tag as the submitted search query", async () => {
+  await renderHome();
+  await fireEvent.press(screen.getByText("# weekend escape"));
+  expect(screen.getByPlaceholderText("Type your current mood")).toHaveDisplayValue("weekend escape");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {
+    userId: "me-1", query: "weekend escape",
+  });
+});
+
+it("clears a stale match for an empty result and expires the no-result feedback after ten seconds", async () => {
+  jest.useFakeTimers();
+  const { store } = await renderHome();
+  await act(async () => store.set(matchState, { user: { _id: "old-1", fullname: "Old Friend" } }));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  await act(async () => mockSocket.serverEmit("search_update", { matches: {} }));
+
+  expect(store.get(matchState)).toBeNull();
+  expect(mockNavigation.navigate).not.toHaveBeenCalled();
+  expect(screen.getByText("Search")).toBeOnTheScreen();
+  await act(async () => jest.advanceTimersByTime(9999));
+  expect(screen.getByText(/No Users found/)).toBeOnTheScreen();
+  await act(async () => jest.advanceTimersByTime(1));
+  expect(screen.queryByText(/No Users found/)).toBeNull();
 });
