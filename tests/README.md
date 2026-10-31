@@ -94,3 +94,17 @@ MessageInputBox, ChatState):
 ```sh
 npm test -- --runInBand tests/screens/chat tests/state/ChatState.test.js
 ```
+
+
+Day 6 shell, shared components and state focused validation:
+
+```sh
+npm test -- --runInBand tests/app tests/components tests/state
+```
+
+On 2026-10-31 this passed 9 suites / 25 tests; the full regression command
+passed 21 suites / 96 tests. Day 6 adds 17 cases relative to main, including
+nine written during the scheduled run and eight retained draft cases. CallScreen
+has no runtime implementation. ToggleSwitch coverage checks its current Global
+default; its toggle mutation is commented out. Navigation tests use doubles and
+do not replace device/browser validation. The final coverage audit is Day 7.
