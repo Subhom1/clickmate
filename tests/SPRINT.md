@@ -18,44 +18,45 @@ Existing later-day branches are drafts of future work, not completed sprint days
 | 3 | Discovery: Explore, ExploreSearch, Result, People | Complete: PR #4 merged and verified |
 | 4 | Profiles and home: Profile, VisitorProfile, Home | Complete: PR #5 merged and verified |
 | 5 | Messaging: ChatScreen, Header, MessagesList, MessageInputBox, ChatState | Complete: PR #6 merged and verified |
-| 6 | Call screen, shared UI, remaining state, app shell | 25 focused / 96 total passed; CI and merge pending |
-| 7 | Checklist gaps, integration, regression and coverage audit | Pending |
+| 6 | Call screen, shared UI, remaining state, app shell | Complete: PR #7 merged and verified |
+| 7 | Checklist gaps, integration, regression and coverage audit | 6 new focused / 102 total passed; CI and merge pending |
 
 ## Production module checklist
 
-Only CreateAvatar has behavior coverage at the start of this sprint. Recheck it
-on Day 6 along with the other shared components. Every module must be verified
-again on Day 7. Add newly discovered production modules here.
+Day 7 re-ran every module suite and audited the production file inventory against
+coverage. All 26 executable modules have direct behavior coverage. CallScreen is
+assessed separately because it contains no executable code. The table records
+module verification, not 100% branch coverage or native end-to-end coverage.
 
 | Module | Planned day | Behavior coverage | Day 7 verified |
 | --- | --- | --- | --- |
-| App.jsx | 6 | 1 case: auth user/platform forwarding through the app shell | No |
-| AuthContext.jsx | 2 | 4 provider/session cases | No |
-| _layout.jsx | 6 | 7 cases: signed-out/valid/missing/expired tokens, sign-out transition, iOS/Android keyboard layout and listener cleanup | No |
-| index.js | 6 | 1 case: registers the root App with Expo | No |
-| FirebaseConfig.js | 7 | Pending (mock Firebase SDK, never load secrets) | No |
-| constant.js | 6 | 2 cases: public IP present and absent | No |
-| app/components/CarouselComp.js | 6 | 2 cases: selection payload and category/data replacement including empty data | No |
-| app/components/CreateAvatar.js | 1, 6 | 7 existing behavior cases re-run Day 6; all passed | No |
-| app/components/ToggleSwitch.js | 6 | 1 case: default Global display; toggle action is disabled in source | No |
-| app/screens/Home.jsx | 4 | 7 cases: validation, submit/cancel, connection, matches, errors, tags and feedback expiry | No |
-| app/screens/Explore.jsx | 3 | 4 cases: loading, category navigation, retry and cache replacement | No |
-| app/screens/ExploreSearch.jsx | 3 | 7 cases: socket search, matches, retry, cancellation and cleanup | No |
-| app/screens/Result.jsx | 3 | 4 cases: chat creation, missing match, new search and failure/retry | No |
-| app/screens/People.jsx | 3 | 4 cases: empty state, friend navigation, unread updates and recovery | No |
-| app/screens/Profile.jsx | 4 | 7 cases: display/logout, validation, editing, deletion and failure recovery | No |
-| app/screens/VisitorProfile.jsx | 4 | 3 cases: profile/back navigation, missing email and visitor route changes | No |
-| app/screens/Login.jsx | 2 | 6 validation, loading, failure/retry and navigation cases | No |
-| app/screens/SignUp.jsx | 2 | 7 validation, pending, rejection and registration cases | No |
-| app/screens/CallScreen.jsx | 6 | Assessed Day 6: all 48 lines are comments; no runtime export or callable behavior | No |
-| app/screens/ChatScreen/ChatScreen.jsx | 5 | 7 cases: history, send/receive, match exit/cleanup, empty send, server echo, fetched chat ID, failures and clear confirmation | No |
-| app/screens/ChatScreen/Header.js | 5 | Back and clear actions plus recipient display | No |
-| app/screens/ChatScreen/MessagesList.js | 5 | Incoming/outgoing display and cleared-history replacement | No |
-| app/screens/ChatScreen/MessageInputBox.js | 5 | Send/reset and independent successive drafts | No |
-| app/state/atoms/ChatState.js | 5 | Session isolation/reset plus fetched chat ID and failed-fetch preservation | No |
-| app/state/atoms/MatchState.js | 6 | Dedicated clear/preserve-profile case plus discovery consumers | No |
-| app/state/atoms/UserState.js | 6 | Dedicated updater/reset/session-isolation case plus auth/profile consumers | No |
-| app/state/atoms/ExploreState.js | 6 | Dedicated category replacement/session-isolation case plus Explore consumer | No |
+| App.jsx | 6 | 1 case: auth user/platform forwarding through the app shell | Yes: full suite and coverage |
+| AuthContext.jsx | 2 | 4 provider/session cases | Yes: full suite and coverage |
+| _layout.jsx | 6 | 7 cases: signed-out/valid/missing/expired tokens, sign-out transition, iOS/Android keyboard layout and listener cleanup | Yes: full suite and coverage |
+| index.js | 6 | 1 case: registers the root App with Expo | Yes: full suite and coverage |
+| FirebaseConfig.js | 7 | 3 cases: supplied config, persistent auth, shared initialization; virtual fake secrets and mocked SDKs | Yes: full suite and coverage |
+| constant.js | 6 | 2 cases: public IP present and absent | Yes: full suite and coverage |
+| app/components/CarouselComp.js | 6 | 2 cases: selection payload and category/data replacement including empty data | Yes: full suite and coverage |
+| app/components/CreateAvatar.js | 1, 6 | 7 existing behavior cases re-run Day 6; all passed | Yes: full suite and coverage |
+| app/components/ToggleSwitch.js | 6 | 1 case: default Global display; toggle action is disabled in source | Yes: full suite and coverage |
+| app/screens/Home.jsx | 4 | 7 cases: validation, submit/cancel, connection, matches, errors, tags and feedback expiry | Yes: full suite and coverage |
+| app/screens/Explore.jsx | 3 | 4 cases: loading, category navigation, retry and cache replacement | Yes: full suite and coverage |
+| app/screens/ExploreSearch.jsx | 3 | 7 cases: socket search, matches, retry, cancellation and cleanup | Yes: full suite and coverage |
+| app/screens/Result.jsx | 3 | 4 cases: chat creation, missing match, new search and failure/retry | Yes: full suite and coverage |
+| app/screens/People.jsx | 3 | 4 cases: empty state, friend navigation, unread updates and recovery | Yes: full suite and coverage |
+| app/screens/Profile.jsx | 4 | 7 cases: display/logout, validation, editing, deletion and failure recovery | Yes: full suite and coverage |
+| app/screens/VisitorProfile.jsx | 4 | 3 cases: profile/back navigation, missing email and visitor route changes | Yes: full suite and coverage |
+| app/screens/Login.jsx | 2 | 6 validation, loading, failure/retry and navigation cases | Yes: full suite and coverage |
+| app/screens/SignUp.jsx | 2 | 7 validation, pending, rejection and registration cases | Yes: full suite and coverage |
+| app/screens/CallScreen.jsx | 6 | Assessed Day 6: all 48 lines are comments; no runtime export or callable behavior | Assessed: 48 comment-only lines; no runtime behavior |
+| app/screens/ChatScreen/ChatScreen.jsx | 5 | 7 cases: history, send/receive, match exit/cleanup, empty send, server echo, fetched chat ID, failures and clear confirmation | Yes: full suite and coverage |
+| app/screens/ChatScreen/Header.js | 5 | Back and clear actions plus recipient display | Yes: full suite and coverage |
+| app/screens/ChatScreen/MessagesList.js | 5 | Incoming/outgoing display and cleared-history replacement | Yes: full suite and coverage |
+| app/screens/ChatScreen/MessageInputBox.js | 5 | Send/reset and independent successive drafts | Yes: full suite and coverage |
+| app/state/atoms/ChatState.js | 5 | Session isolation/reset plus fetched chat ID and failed-fetch preservation | Yes: full suite and coverage |
+| app/state/atoms/MatchState.js | 6 | Dedicated clear/preserve-profile case plus discovery consumers | Yes: full suite and coverage |
+| app/state/atoms/UserState.js | 6 | Dedicated updater/reset/session-isolation case plus auth/profile consumers | Yes: full suite and coverage |
+| app/state/atoms/ExploreState.js | 6 | Dedicated category replacement/session-isolation case plus Explore consumer | Yes: full suite and coverage |
 
 Build configuration (Babel, Metro, Tailwind, app.json) is not a frontend runtime
 module. FirebaseSecret.js is local configuration and must never enter a test,
@@ -187,3 +188,50 @@ run. `git diff --check` passed. CI and verified merge are recorded in automation
 memory after completion. Day 7 remains: audit all checklist modules, safely test
 FirebaseConfig with mocked SDK/secret data, close behavior gaps, add integration
 regressions, run the full suite and coverage, and document actual results.
+
+
+## Day 7 integration and final audit
+
+Added six new distinct behavior cases on `test/frontend-integration-coverage`:
+
+- FirebaseConfig initializes and exports the app with supplied fake configuration.
+- FirebaseConfig initializes auth for that app with React Native storage persistence.
+- Repeated configuration imports share the initialized app/auth without reinitializing.
+- ExploreSearch → Result → ChatScreen carries the real match/profile/chat atoms into
+  history, sending, incoming messages and CreateAvatar rendering; sockets disconnect
+  at screen handoffs and exit.
+- Empty search clears a stale match; retry reaches a fresh real Result screen.
+- Failed chat creation preserves the discovered result; retry opens and joins chat.
+
+The integration harness replaces navigation with route state while mounting real
+screens under one Jotai store. HTTP, socket transport and native icons are doubles.
+It does not test a live server, Firebase SDK internals or native navigation. The
+Firebase tests use a virtual secret module with explicitly fake values; actual
+FirebaseSecret.js is never read, loaded or included in coverage. No production/UI
+changes or browser/device visual checks were performed.
+
+Inventory: six root runtime modules plus 21 files in app/ = 27 entries. All 26
+executable modules have nonzero statement coverage and behavior tests. CallScreen
+contains 48 comment-only lines, no runtime export, and no navigation registration.
+ToggleSwitch still has its mutation commented out: its Global default is covered,
+while disabled Local/toggle behavior is not claimed. No additional runtime modules
+were discovered; build configuration is outside this inventory.
+
+Validation on 2026-11-01:
+
+- Focused: `npm test -- --runInBand tests/app/FirebaseConfig.test.js tests/integration`
+  — 2 suites / 6 tests passed.
+- Full: `npm run test:all` — 23 suites / 102 tests passed.
+- Coverage: `npm run test:coverage -- --runInBand` — 23 suites / 102 tests passed;
+  96.03% statements, 83.39% branches, 89.22% functions, 96.53% lines.
+- FirebaseConfig, App, AuthContext, index, constant, CreateAvatar and all four atom
+  modules report 100% on all metrics. See `COVERAGE.md` for every module.
+- The first focused attempt exposed a reset socket factory in the integration
+  harness; installing the factory in beforeEach fixed it. Final focused, full and
+  coverage runs passed. No production defect was found by these new cases.
+
+Remaining unexecuted branches include navigation icon callbacks, native input/list
+layout callbacks, some service error paths and disabled ToggleSwitch behavior.
+Coverage establishes module regression coverage, not exhaustive behavior proof.
+CI and verified merge are recorded in automation memory after completion. Day 7
+and the sprint remain pending until those checks and merge verification pass.

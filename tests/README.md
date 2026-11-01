@@ -108,3 +108,24 @@ nine written during the scheduled run and eight retained draft cases. CallScreen
 has no runtime implementation. ToggleSwitch coverage checks its current Global
 default; its toggle mutation is commented out. Navigation tests use doubles and
 do not replace device/browser validation. The final coverage audit is Day 7.
+
+
+## Day 7 integration and coverage audit
+
+```sh
+npm test -- --runInBand tests/app/FirebaseConfig.test.js tests/integration
+npm run test:all
+npm run test:coverage -- --runInBand
+```
+
+On 2026-11-01: 6 new cases passed; full and coverage runs each passed 23 suites /
+102 tests. Coverage: 96.03% statements, 83.39% branches, 89.22% functions, 96.53%
+lines. Every executable frontend module has behavior coverage. `COVERAGE.md`
+records each module and the remaining limits; `SPRINT.md` has the final checklist.
+Open `coverage/lcov-report/index.html` after running coverage for line details.
+
+Integration tests mount real ExploreSearch, Result, ChatScreen, chat subcomponents,
+CreateAvatar and shared Jotai state across route changes. Navigation itself and
+network services are doubles. FirebaseConfig tests directly load production
+initialization with mocked SDKs, storage and a virtual fake secret module. Never
+replace the fake configuration with local credentials.
