@@ -31,6 +31,12 @@ describe("InitialsCircle", () => {
     expect(screen.queryByText("AL")).toBeNull();
   });
 
+  it("shows a saved photo instead of initials when a photo URL is present", async () => {
+    await render(<InitialsCircle name="Ada Lovelace" photoUri="https://example.com/avatar.jpg" styles={{}} />);
+    expect(screen.getByLabelText("Ada Lovelace profile photo")).toHaveProp("source", { uri: "https://example.com/avatar.jpg" });
+    expect(screen.queryByText("AL")).toBeNull();
+  });
+
   it.each([
     [true, "#67AB0F"],
     [false, "#A7B0AD"],

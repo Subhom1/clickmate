@@ -25,6 +25,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "ClickMate uses a photo you select for your profile picture.",
+          "cameraPermission": "ClickMate uses the camera to take your profile picture.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash.png",

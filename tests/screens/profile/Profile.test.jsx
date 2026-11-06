@@ -6,11 +6,13 @@ import { signOut } from "firebase/auth";
 import { Auth } from "../../../FirebaseConfig";
 import Profile from "../../../app/screens/Profile";
 import { userState } from "../../../app/state/atoms/UserState";
+import { selectProfilePhoto } from "../../../app/profilePhoto/selectPhoto";
 
 jest.mock("firebase/auth", () => ({ signOut: jest.fn() }));
 jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: null } }));
 jest.mock("axios", () => ({ get: jest.fn(), patch: jest.fn(), delete: jest.fn() }));
 jest.mock("../../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../../app/profilePhoto/selectPhoto", () => ({ selectProfilePhoto: jest.fn() }));
 jest.mock("@expo/vector-icons/Feather", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -24,6 +26,7 @@ beforeEach(() => {
   signOut.mockResolvedValue(undefined);
   jest.spyOn(console, "log").mockImplementation(() => {});
   axios.get.mockResolvedValue({ data: [{ _id: "i-1", text: "Hiking" }, { _id: "i-2", text: "Movies" }] });
+  selectProfilePhoto.mockResolvedValue(null);
 });
 afterEach(() => jest.restoreAllMocks());
 
@@ -45,6 +48,47 @@ const renderProfile = async (user = initialUser) => {
 };
 
 describe("Profile", () => {
+  it("previews the actual processed image and clears it on cancel", async () => {
+    selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512 });
+    await renderProfile();
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByLabelText("Cropped photo preview")).toHaveProp("source", { uri: "file://cropped.jpg" }));
+    await fireEvent.press(screen.getByText("Cancel"));
+    expect(screen.queryByLabelText("Cropped photo preview")).toBeNull();
+  });
+
+  it("keeps the existing avatar when upload is unavailable", async () => {
+    selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512 });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Take photo"));
+    await waitFor(() => expect(screen.getByText("Save photo")).toBeOnTheScreen());
+    await fireEvent.press(screen.getByText("Save photo"));
+    expect(screen.getByText(/Photo upload is unavailable/)).toBeOnTheScreen();
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+  });
+
+  it("shows a picker error without replacing profile data", async () => {
+    selectProfilePhoto.mockRejectedValue(new Error("Photo access was denied."));
+    const { store } = await renderProfile();
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByText("Photo access was denied.")).toBeOnTheScreen());
+    expect(store.get(userState)).toEqual(initialUser);
+  });
+
+  it("shows preparation progress and blocks repeat selection", async () => {
+    let finish;
+    selectProfilePhoto.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    await renderProfile();
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByLabelText("Preparing photo")).toBeOnTheScreen());
+    expect(screen.getByText("Take photo").parent).toBeDisabled();
+    finish(null);
+    await waitFor(() => expect(screen.queryByLabelText("Preparing photo")).toBeNull());
+  });
   it("shows the user's profile and signs out", async () => {
     const { store } = await renderProfile();
     expect(screen.getByText("Casey User")).toBeOnTheScreen();
