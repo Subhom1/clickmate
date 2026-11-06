@@ -37,6 +37,7 @@ export default function Profile({ route }) {
   const [photoDraft, setPhotoDraft] = useState(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  const [photoProgress, setPhotoProgress] = useState(null);
   const choosePhoto = async (source) => {
     if (photoBusy) return;
     setPhotoBusy(true);
@@ -54,17 +55,20 @@ export default function Profile({ route }) {
     if (photoBusy) return;
     setPhotoDraft(null);
     setPhotoError("");
+    setPhotoProgress(null);
     setPhotoEditorOpen(false);
   };
   const savePhoto = async () => {
     if (!photoDraft || !userData?._id || photoBusy) return;
     setPhotoBusy(true);
     setPhotoError("");
+    setPhotoProgress(0);
     try {
-      const result = await profilePhotoApi.save(userData._id, photoDraft);
+      const result = await profilePhotoApi.save(userData._id, photoDraft, setPhotoProgress);
       if (!result?.avatarUrl) throw new Error("The updated profile photo was not returned.");
       setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl }));
       setPhotoDraft(null);
+      setPhotoProgress(null);
       setPhotoEditorOpen(false);
     } catch (error) {
       setPhotoError(error?.message || "The photo could not be saved.");
@@ -319,7 +323,12 @@ export default function Profile({ route }) {
                 style={styles.photoPreview}
               />
             ) : null}
-            {photoBusy && <ActivityIndicator accessibilityLabel="Preparing photo" color="#67AB0F" />}
+            {photoBusy && <ActivityIndicator accessibilityLabel={photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
+            {photoProgress !== null && photoBusy && (
+              <Text accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
+                {`Uploading photo: ${Math.round(photoProgress * 100)}%`}
+              </Text>
+            )}
             <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
               <Text>Choose from gallery</Text>
             </Pressable>

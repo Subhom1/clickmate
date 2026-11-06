@@ -7,6 +7,7 @@ import { Auth } from "../../../FirebaseConfig";
 import Profile from "../../../app/screens/Profile";
 import { userState } from "../../../app/state/atoms/UserState";
 import { selectProfilePhoto } from "../../../app/profilePhoto/selectPhoto";
+import { profilePhotoApi } from "../../../app/profilePhoto/api";
 
 jest.mock("firebase/auth", () => ({ signOut: jest.fn() }));
 jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: null } }));
@@ -88,6 +89,26 @@ describe("Profile", () => {
     expect(screen.getByText("Take photo").parent).toBeDisabled();
     finish(null);
     await waitFor(() => expect(screen.queryByLabelText("Preparing photo")).toBeNull());
+  });
+
+  it("shows upload progress and updates the avatar only after confirmation", async () => {
+    selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512, mimeType: "image/jpeg" });
+    let confirmUpload;
+    const pendingUpload = new Promise((resolve) => { confirmUpload = resolve; });
+    jest.spyOn(profilePhotoApi, "save").mockImplementation((_id, _photo, onProgress) => {
+      onProgress(0.5);
+      return pendingUpload;
+    });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByText("Save photo")).toBeOnTheScreen());
+    fireEvent.press(screen.getByText("Save photo"));
+    await waitFor(() => expect(screen.getByText("Uploading photo: 50%")).toBeOnTheScreen());
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+    confirmUpload({ id: "me-1", avatarUrl: "https://example.com/new.jpg" });
+    await waitFor(() => expect(store.get(userState).avatarUrl).toBe("https://example.com/new.jpg"));
+    expect(screen.queryByText("Save photo")).toBeNull();
   });
   it("shows the user's profile and signs out", async () => {
     const { store } = await renderProfile();

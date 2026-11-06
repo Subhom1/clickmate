@@ -8,7 +8,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | Day | Work | State |
 | --- | --- | --- |
 | 1 | Discover repository and API; add native selection, square export, preview, cancellation, permissions, tests | Complete with platform and backend blockers noted below |
-| 2 | Connect typed upload adapter to a confirmed backend contract, or isolate a mock and document the dependency | Pending |
+| 2 | Connect typed upload adapter to a confirmed backend contract, or isolate a mock and document the dependency | Complete as contract-driven adapter; real routes remain blocked |
 | 3 | Add upload progress, retries, and replacement flow | Pending |
 | 4 | Add removal flow and persistence refresh | Pending |
 | 5 | Propagate avatars across relevant screens | Pending |
@@ -54,12 +54,40 @@ frontend regression sprint in `tests/SPRINT.md`.
   adapter boundary, and build upload progress and response handling without
   claiming production integration.
 
+## Day 2 continuation (6 November, started on request)
+
+- Added `expo-file-system` ~57.0.7 from the local Expo SDK 57 compatibility
+  map. `createPresignedProfilePhotoApi` accepts backend operations as inputs;
+  no route names, authorization headers, or credentials are fabricated.
+- Before requesting a session, the adapter verifies a local 512×512 JPEG file
+  exists and is at most 2 MiB. It requires an HTTPS upload URL, the backend's
+  storage reference, and its required headers. It uploads binary content via
+  `File.upload` using PUT, reports upload progress, and requires a successful
+  HTTP response before confirming the upload.
+- The displayed avatar changes only after confirmation returns the same user
+  ID and a nonempty avatar URL. Failed uploads, invalid sessions and invalid
+  confirmation responses leave the existing avatar in place. Removal support
+  exists in the adapter and validates the response, but the UI is pending.
+- The production adapter still rejects without a confirmed backend contract.
+  The test mock remains isolated under `tests/mocks`.
+- The profile sheet now reports upload progress. Native transfer progress and
+  the response shape are covered by deterministic tests, not a live backend.
+- Validation: 25 Jest suites / 121 tests passed; iOS and Android JavaScript
+  exports completed; Expo dependency check passed using its offline local map.
+  No lint or TypeScript scripts are configured in this JavaScript repository.
+- Simulator: iOS Expo Go launched the app and displayed its login screen on
+  the booted iPhone 18 Pro. The authenticated profile and photo editor were
+  not exercised without a test account. Android ADB reported no attached
+  device. Screenshot: `/private/tmp/clickmate-day2-ios.png`.
+- Next priority: confirm and wire backend operations, add retry behavior and
+  replacement/removal UI, then validate persistence after a fresh login.
+
 ## Backend contract needed
 
 The backend must specify authenticated endpoints and response fields for:
 
 1. Creating a profile photo upload session (user ID, MIME type, file size),
-   returning an upload URL, required headers, and storage reference.
+   returning an HTTPS upload URL, required headers, and storage reference.
 2. Confirming the uploaded image and returning updated profile metadata with a
    durable avatar URL or storage reference.
 3. Removing the current photo and returning updated profile metadata.
@@ -69,7 +97,15 @@ No such endpoints are assumed to exist. Until confirmed, the Save action gives
 an explicit unavailable message and does not change profile state or claim a
 successful upload. A local preview is not persistent.
 
+The expected adapter interface is `createSession(userId, {mimeType, size})`,
+`confirm(userId, storageReference)`, and `remove(userId)`. `createSession` must
+return `{uploadUrl, storageReference, headers}`. `confirm` must return
+`{id, avatarUrl}` for the same user. `remove` must return `{id, avatarUrl: null}`.
+The endpoint paths, authentication mechanism, storage response codes, and
+durable avatar field name require backend confirmation before wiring.
+
 ## References
 
 - [Expo SDK 57 ImagePicker](https://docs.expo.dev/versions/v57.0.0/sdk/imagepicker/)
 - [Expo SDK 57 ImageManipulator](https://docs.expo.dev/versions/v57.0.0/sdk/imagemanipulator/)
+- [Expo FileSystem upload API](https://docs.expo.dev/versions/latest/sdk/filesystem/)
