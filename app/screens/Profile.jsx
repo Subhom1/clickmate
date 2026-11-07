@@ -8,6 +8,9 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  Modal,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
@@ -17,6 +20,9 @@ import { useAtom, useSetAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
 import { IP } from "../../constant";
 import Icon from "@expo/vector-icons/Feather";
+import { InitialsCircle } from "../components/CreateAvatar";
+import { selectProfilePhoto } from "../profilePhoto/selectPhoto";
+import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../profilePhoto/api";
 
 export default function Profile({ route }) {
   const [userData, setUserData] = useAtom(userState);
@@ -27,6 +33,60 @@ export default function Profile({ route }) {
   const [interests, setAllInterests] = useState([]);
   const [userInterestsIDs, setUserInterestsIDs] = useState([]);
   const [nameError, setNameError] = useState(false);
+  const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
+  const [photoDraft, setPhotoDraft] = useState(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [photoProgress, setPhotoProgress] = useState(null);
+  const [photoCanRetry, setPhotoCanRetry] = useState(false);
+  const choosePhoto = async (source) => {
+    if (photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoError("");
+    try {
+      const selected = await selectProfilePhoto(source);
+      if (selected) {
+        setPhotoDraft(selected);
+        setPhotoCanRetry(false);
+        setPhotoProgress(null);
+      }
+    } catch (error) {
+      setPhotoError(error?.message || "The photo could not be prepared.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+  const closePhotoEditor = () => {
+    if (photoBusy) return;
+    setPhotoDraft(null);
+    setPhotoError("");
+    setPhotoProgress(null);
+    setPhotoCanRetry(false);
+    setPhotoEditorOpen(false);
+  };
+  const savePhoto = async () => {
+    if (!photoDraft || !userData?._id || photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoError("");
+    setPhotoProgress(0);
+    try {
+      const result = await profilePhotoApi.save(userData._id, photoDraft, setPhotoProgress);
+      if (result?.id !== userData._id || !result.avatarUrl) {
+        throw new Error("The updated profile photo was not returned.");
+      }
+      setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl }));
+      setPhotoDraft(null);
+      setPhotoProgress(null);
+      setPhotoCanRetry(false);
+      setPhotoEditorOpen(false);
+    } catch (error) {
+      setPhotoError(error?.message || "The photo could not be saved.");
+      setPhotoProgress(null);
+      setPhotoCanRetry(!(error instanceof ProfilePhotoApiUnavailableError));
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
   useEffect(() => {
     getAllInterests();
   }, []);
@@ -97,6 +157,20 @@ export default function Profile({ route }) {
         className="mx-7"
         contentContainerStyle={{ paddingBottom: 90 }}
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile photo"
+          onPress={() => setPhotoEditorOpen(true)}
+          className="self-center mt-8 mb-3"
+          style={{ minWidth: 72, minHeight: 72, alignItems: "center", justifyContent: "center" }}
+        >
+          <InitialsCircle
+            name={userData?.fullname || ""}
+            photoUri={userData?.avatarUrl}
+            styles={{ circle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#A7B0AD", overflow: "hidden", alignItems: "center", justifyContent: "center" }, initials: { color: "white", fontSize: 22 } }}
+          />
+          <Text className="text-primary_green mt-1">Edit photo</Text>
+        </Pressable>
         <View
           className={`flex-row items-center justify-end ${
             platform == "ios" ? "mt-5" : "mt-16"
@@ -249,6 +323,41 @@ export default function Profile({ route }) {
           </TouchableOpacity>
         )}
       </ScrollView>
+      <Modal visible={photoEditorOpen} animationType="slide" transparent onRequestClose={closePhotoEditor}>
+        <SafeAreaView style={styles.photoBackdrop}>
+          <View style={styles.photoSheet}>
+            <Text style={styles.photoTitle}>{userData?.avatarUrl ? "Replace profile photo" : "Profile photo"}</Text>
+            {photoDraft ? (
+              <Image
+                accessibilityLabel="Cropped photo preview"
+                source={{ uri: photoDraft.uri }}
+                style={styles.photoPreview}
+              />
+            ) : null}
+            {photoBusy && <ActivityIndicator accessibilityLabel={photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
+            {photoProgress !== null && photoBusy && (
+              <Text accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
+                {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
+              </Text>
+            )}
+            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
+              <Text>Choose from gallery</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("camera")} style={styles.photoAction}>
+              <Text>Take photo</Text>
+            </Pressable>
+            {photoDraft && (
+              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={styles.photoAction}>
+                <Text>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
+              </Pressable>
+            )}
+            {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
+            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={closePhotoEditor} style={styles.photoAction}>
+              <Text>Cancel</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -257,4 +366,10 @@ const styles = StyleSheet.create({
     color: "#AB0F12",
     fontSize: 12,
   },
+  photoBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#0006" },
+  photoSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, alignItems: "center", gap: 12 },
+  photoTitle: { fontSize: 20, fontWeight: "600" },
+  photoPreview: { width: 220, height: 220, borderRadius: 110 },
+  photoAction: { minHeight: 48, minWidth: 220, borderRadius: 24, backgroundColor: "#EAF5E3", justifyContent: "center", alignItems: "center" },
+  photoError: { color: "#AB0F12", textAlign: "center" },
 });
