@@ -64,9 +64,11 @@ describe("Profile", () => {
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
     await fireEvent.press(screen.getByText("Take photo"));
-    await waitFor(() => expect(screen.getByText("Save photo")).toBeOnTheScreen());
-    await fireEvent.press(screen.getByText("Save photo"));
+    await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
+    await fireEvent.press(screen.getByText("Replace photo"));
     expect(screen.getByText(/Photo upload is unavailable/)).toBeOnTheScreen();
+    expect(screen.getByText("Replace photo")).toBeOnTheScreen();
+    expect(screen.queryByText("Retry upload")).toBeNull();
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
   });
 
@@ -102,13 +104,80 @@ describe("Profile", () => {
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
     await fireEvent.press(screen.getByText("Choose from gallery"));
-    await waitFor(() => expect(screen.getByText("Save photo")).toBeOnTheScreen());
-    fireEvent.press(screen.getByText("Save photo"));
+    await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
+    fireEvent.press(screen.getByText("Replace photo"));
     await waitFor(() => expect(screen.getByText("Uploading photo: 50%")).toBeOnTheScreen());
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
     confirmUpload({ id: "me-1", avatarUrl: "https://example.com/new.jpg" });
     await waitFor(() => expect(store.get(userState).avatarUrl).toBe("https://example.com/new.jpg"));
     expect(screen.queryByText("Save photo")).toBeNull();
+  });
+
+  it("shows the confirmation stage and prevents another upload while saving", async () => {
+    selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512, mimeType: "image/jpeg" });
+    let finish;
+    const pending = new Promise((resolve) => { finish = resolve; });
+    const save = jest.spyOn(profilePhotoApi, "save").mockImplementation((_id, _photo, onProgress) => {
+      onProgress(0.9);
+      return pending;
+    });
+    await renderProfile();
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByText("Save photo")).toBeOnTheScreen());
+    fireEvent.press(screen.getByText("Save photo"));
+    await waitFor(() => expect(screen.getByText("Finishing photo...")).toBeOnTheScreen());
+    expect(screen.getByText("Save photo").parent).toBeDisabled();
+    expect(screen.getByText("Cancel").parent).toBeDisabled();
+    fireEvent.press(screen.getByText("Save photo"));
+    expect(save).toHaveBeenCalledTimes(1);
+    finish({ id: "me-1", avatarUrl: "https://example.com/new.jpg" });
+    await waitFor(() => expect(screen.queryByText("Finishing photo...")).toBeNull());
+  });
+
+  it("retries a failed replacement with the same cropped file and keeps the old avatar until success", async () => {
+    const draft = { uri: "file://cropped.jpg", width: 512, height: 512, mimeType: "image/jpeg" };
+    selectProfilePhoto.mockResolvedValue(draft);
+    const save = jest.spyOn(profilePhotoApi, "save")
+      .mockRejectedValueOnce(new Error("Network unavailable."))
+      .mockResolvedValueOnce({ id: "me-1", avatarUrl: "https://example.com/new.jpg" });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    expect(screen.getByText("Replace profile photo")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
+    await fireEvent.press(screen.getByText("Replace photo"));
+    await waitFor(() => expect(screen.getByText("Retry upload")).toBeOnTheScreen());
+    expect(screen.getByText("Network unavailable.")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Cropped photo preview")).toHaveProp("source", { uri: draft.uri });
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+    await fireEvent.press(screen.getByText("Retry upload"));
+    await waitFor(() => expect(store.get(userState).avatarUrl).toBe("https://example.com/new.jpg"));
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenNthCalledWith(2, "me-1", draft, expect.any(Function));
+  });
+
+  it("keeps the current draft when the replacement picker is cancelled", async () => {
+    const draft = { uri: "file://first.jpg", width: 512, height: 512, mimeType: "image/jpeg" };
+    selectProfilePhoto.mockResolvedValueOnce(draft).mockResolvedValueOnce(null);
+    await renderProfile();
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByLabelText("Cropped photo preview")).toHaveProp("source", { uri: draft.uri }));
+    await fireEvent.press(screen.getByText("Take photo"));
+    expect(screen.getByLabelText("Cropped photo preview")).toHaveProp("source", { uri: draft.uri });
+  });
+
+  it("rejects a mismatched save response without replacing the current avatar", async () => {
+    selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512, mimeType: "image/jpeg" });
+    jest.spyOn(profilePhotoApi, "save").mockResolvedValue({ id: "another-user", avatarUrl: "https://example.com/wrong.jpg" });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
+    await fireEvent.press(screen.getByText("Replace photo"));
+    await waitFor(() => expect(screen.getByText("The updated profile photo was not returned.")).toBeOnTheScreen());
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
   });
   it("shows the user's profile and signs out", async () => {
     const { store } = await renderProfile();

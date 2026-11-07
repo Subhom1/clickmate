@@ -9,7 +9,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | --- | --- | --- |
 | 1 | Discover repository and API; add native selection, square export, preview, cancellation, permissions, tests | Complete with platform and backend blockers noted below |
 | 2 | Connect typed upload adapter to a confirmed backend contract, or isolate a mock and document the dependency | Complete as contract-driven adapter; real routes remain blocked |
-| 3 | Add upload progress, retries, and replacement flow | Pending |
+| 3 | Add upload progress, retries, and replacement flow | Complete as frontend flow; backend and editor simulator checks remain blocked |
 | 4 | Add removal flow and persistence refresh | Pending |
 | 5 | Propagate avatars across relevant screens | Pending |
 | 6 | Platform and end-to-end validation, accessibility, error recovery | Pending |
@@ -81,6 +81,15 @@ frontend regression sprint in `tests/SPRINT.md`.
   device. Screenshot: `/private/tmp/clickmate-day2-ios.png`.
 - Next priority: confirm and wire backend operations, add retry behavior and
   replacement/removal UI, then validate persistence after a fresh login.
+
+## Day 3 continuation (7 November, started on request)
+
+- Reviewed [backend draft PR #14](https://github.com/Subhom1/clickmate-backend/pull/14). It adds `avatarMediaId` and private storage foundations, but explicitly defers authenticated upload sessions, completion, removal, and the frontend endpoint contract. It is unmerged and provides no usable routes. The production frontend adapter remains unavailable.
+- The photo sheet now identifies replacement when an avatar exists, keeps the old avatar throughout failed attempts, offers a retry with the same processed file after a recoverable save failure, and avoids offering a retry for the known unavailable API. A new selection or cancellation clears retry state.
+- The UI distinguishes byte transfer progress from final server confirmation, disables duplicate actions while saving, and rejects a save response for a different user.
+- Added deterministic tests for retry, picker cancellation during replacement, mismatched response, and the confirmation stage. All 25 Jest suites / 125 tests pass. iOS and Android JavaScript exports pass. This repository has no lint or TypeScript scripts; the `--if-present` checks performed no work.
+- iOS: launched ClickMate on a booted iPhone 18 Pro and visually verified the Home screen. The app logged an Axios timeout fetching MongoDB user details, so the authenticated photo editor could not be exercised. Screenshot: `/private/tmp/clickmate-day3-ios.png`. Android: no attached emulator. Neither platform's photo flow is accepted yet.
+- Next priority: removal UI and profile refresh behavior, while retaining the explicit backend dependency until endpoints and durable avatar metadata are confirmed.
 
 ## Backend contract needed
 

@@ -22,7 +22,7 @@ import { IP } from "../../constant";
 import Icon from "@expo/vector-icons/Feather";
 import { InitialsCircle } from "../components/CreateAvatar";
 import { selectProfilePhoto } from "../profilePhoto/selectPhoto";
-import { profilePhotoApi } from "../profilePhoto/api";
+import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../profilePhoto/api";
 
 export default function Profile({ route }) {
   const [userData, setUserData] = useAtom(userState);
@@ -38,13 +38,18 @@ export default function Profile({ route }) {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [photoProgress, setPhotoProgress] = useState(null);
+  const [photoCanRetry, setPhotoCanRetry] = useState(false);
   const choosePhoto = async (source) => {
     if (photoBusy) return;
     setPhotoBusy(true);
     setPhotoError("");
     try {
       const selected = await selectProfilePhoto(source);
-      if (selected) setPhotoDraft(selected);
+      if (selected) {
+        setPhotoDraft(selected);
+        setPhotoCanRetry(false);
+        setPhotoProgress(null);
+      }
     } catch (error) {
       setPhotoError(error?.message || "The photo could not be prepared.");
     } finally {
@@ -56,6 +61,7 @@ export default function Profile({ route }) {
     setPhotoDraft(null);
     setPhotoError("");
     setPhotoProgress(null);
+    setPhotoCanRetry(false);
     setPhotoEditorOpen(false);
   };
   const savePhoto = async () => {
@@ -65,13 +71,18 @@ export default function Profile({ route }) {
     setPhotoProgress(0);
     try {
       const result = await profilePhotoApi.save(userData._id, photoDraft, setPhotoProgress);
-      if (!result?.avatarUrl) throw new Error("The updated profile photo was not returned.");
+      if (result?.id !== userData._id || !result.avatarUrl) {
+        throw new Error("The updated profile photo was not returned.");
+      }
       setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl }));
       setPhotoDraft(null);
       setPhotoProgress(null);
+      setPhotoCanRetry(false);
       setPhotoEditorOpen(false);
     } catch (error) {
       setPhotoError(error?.message || "The photo could not be saved.");
+      setPhotoProgress(null);
+      setPhotoCanRetry(!(error instanceof ProfilePhotoApiUnavailableError));
     } finally {
       setPhotoBusy(false);
     }
@@ -315,7 +326,7 @@ export default function Profile({ route }) {
       <Modal visible={photoEditorOpen} animationType="slide" transparent onRequestClose={closePhotoEditor}>
         <SafeAreaView style={styles.photoBackdrop}>
           <View style={styles.photoSheet}>
-            <Text style={styles.photoTitle}>Profile photo</Text>
+            <Text style={styles.photoTitle}>{userData?.avatarUrl ? "Replace profile photo" : "Profile photo"}</Text>
             {photoDraft ? (
               <Image
                 accessibilityLabel="Cropped photo preview"
@@ -326,7 +337,7 @@ export default function Profile({ route }) {
             {photoBusy && <ActivityIndicator accessibilityLabel={photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
             {photoProgress !== null && photoBusy && (
               <Text accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
-                {`Uploading photo: ${Math.round(photoProgress * 100)}%`}
+                {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
               </Text>
             )}
             <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
@@ -337,7 +348,7 @@ export default function Profile({ route }) {
             </Pressable>
             {photoDraft && (
               <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={styles.photoAction}>
-                <Text>Save photo</Text>
+                <Text>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
               </Pressable>
             )}
             {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
