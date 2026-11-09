@@ -10,7 +10,7 @@ import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
 import Icon from "@expo/vector-icons/AntDesign";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import io from "socket.io-client";
 import axios from "axios";
 import { IP } from "../../constant";

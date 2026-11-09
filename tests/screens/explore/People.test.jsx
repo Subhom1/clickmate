@@ -9,7 +9,7 @@ import { createSocketMock } from "../../mocks/socket";
 
 const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
-jest.mock("expo-router/react-navigation", () => ({ useNavigation: () => mockNavigation }));
+jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
 jest.mock("../../../constant", () => ({ IP: "localhost" }));

@@ -12,7 +12,7 @@ import axios from "axios";
 
 const mockNavigate = jest.fn();
 
-jest.mock("expo-router/react-navigation", () => ({
+jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
   useRoute: () => ({ params: { platform: "ios" } }),
 }));

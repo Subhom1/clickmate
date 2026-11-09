@@ -23,7 +23,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -34,9 +33,6 @@
       ]
     ],
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "e7ad7253-b729-4b04-80f8-6e39754ddb21"
       }

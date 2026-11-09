@@ -10,7 +10,7 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";

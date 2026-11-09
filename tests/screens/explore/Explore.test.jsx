@@ -6,7 +6,7 @@ import Explore from "../../../app/screens/Explore";
 import { exploreState } from "../../../app/state/atoms/ExploreState";
 
 const mockNavigate = jest.fn();
-jest.mock("expo-router/react-navigation", () => ({
+jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));
 jest.mock("axios", () => ({ get: jest.fn() }));

@@ -9,7 +9,7 @@ import { userState } from "../../../app/state/atoms/UserState";
 import { chatState } from "../../../app/state/atoms/ChatState";
 
 const mockNavigation = { navigate: jest.fn() };
-jest.mock("expo-router/react-navigation", () => ({ useNavigation: () => mockNavigation }));
+jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("axios", () => ({ post: jest.fn() }));
 jest.mock("../../../constant", () => ({ IP: "localhost" }));
 
