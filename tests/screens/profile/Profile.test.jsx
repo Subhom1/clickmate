@@ -179,6 +179,42 @@ describe("Profile", () => {
     await waitFor(() => expect(screen.getByText("The updated profile photo was not returned.")).toBeOnTheScreen());
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
   });
+
+  it("requires confirmation before removing an existing photo", async () => {
+    const remove = jest.spyOn(profilePhotoApi, "remove").mockResolvedValue({ id: "me-1", avatarUrl: null });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Remove photo"));
+    expect(screen.getByText("Remove your current profile photo?")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByText("Keep photo"));
+    expect(remove).not.toHaveBeenCalled();
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Confirm removal"));
+    await waitFor(() => expect(store.get(userState).avatarUrl).toBeNull());
+    expect(remove).toHaveBeenCalledWith("me-1");
+  });
+
+  it("retains the avatar and confirmation controls when removal fails", async () => {
+    jest.spyOn(profilePhotoApi, "remove").mockRejectedValue(new Error("Removal unavailable."));
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Confirm removal"));
+    await waitFor(() => expect(screen.getByText("Removal unavailable.")).toBeOnTheScreen());
+    expect(screen.getByText("Confirm removal")).toBeOnTheScreen();
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+  });
+
+  it("rejects removal responses for another user", async () => {
+    jest.spyOn(profilePhotoApi, "remove").mockResolvedValue({ id: "another-user", avatarUrl: null });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Confirm removal"));
+    await waitFor(() => expect(screen.getByText("Photo removal was not confirmed.")).toBeOnTheScreen());
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+  });
   it("shows the user's profile and signs out", async () => {
     const { store } = await renderProfile();
     expect(screen.getByText("Casey User")).toBeOnTheScreen();

@@ -39,6 +39,8 @@ export default function Profile({ route }) {
   const [photoError, setPhotoError] = useState("");
   const [photoProgress, setPhotoProgress] = useState(null);
   const [photoCanRetry, setPhotoCanRetry] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState(false);
+  const [photoRemoving, setPhotoRemoving] = useState(false);
   const choosePhoto = async (source) => {
     if (photoBusy) return;
     setPhotoBusy(true);
@@ -47,6 +49,7 @@ export default function Profile({ route }) {
       const selected = await selectProfilePhoto(source);
       if (selected) {
         setPhotoDraft(selected);
+        setRemoveConfirm(false);
         setPhotoCanRetry(false);
         setPhotoProgress(null);
       }
@@ -62,6 +65,7 @@ export default function Profile({ route }) {
     setPhotoError("");
     setPhotoProgress(null);
     setPhotoCanRetry(false);
+    setRemoveConfirm(false);
     setPhotoEditorOpen(false);
   };
   const savePhoto = async () => {
@@ -86,6 +90,30 @@ export default function Profile({ route }) {
     } finally {
       setPhotoBusy(false);
     }
+  };
+  const removePhoto = async () => {
+    if (!removeConfirm || !userData?._id || !userData?.avatarUrl || photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoRemoving(true);
+    setPhotoError("");
+    try {
+      const result = await profilePhotoApi.remove(userData._id);
+      if (result?.id !== userData._id || result.avatarUrl !== null) {
+        throw new Error("Photo removal was not confirmed.");
+      }
+      setUserData((current) => ({ ...current, avatarUrl: null }));
+      closePhotoEditorAfterRemoval();
+    } catch (error) {
+      setPhotoError(error?.message || "The photo could not be removed.");
+    } finally {
+      setPhotoBusy(false);
+      setPhotoRemoving(false);
+    }
+  };
+  const closePhotoEditorAfterRemoval = () => {
+    setPhotoDraft(null);
+    setRemoveConfirm(false);
+    setPhotoEditorOpen(false);
   };
   useEffect(() => {
     getAllInterests();
@@ -334,7 +362,7 @@ export default function Profile({ route }) {
                 style={styles.photoPreview}
               />
             ) : null}
-            {photoBusy && <ActivityIndicator accessibilityLabel={photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
+            {photoBusy && <ActivityIndicator accessibilityLabel={photoRemoving ? "Removing photo" : photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
             {photoProgress !== null && photoBusy && (
               <Text accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
                 {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
@@ -351,6 +379,21 @@ export default function Profile({ route }) {
                 <Text>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
               </Pressable>
             )}
+            {userData?.avatarUrl && !photoDraft && (removeConfirm ? (
+              <>
+                <Text>Remove your current profile photo?</Text>
+                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={removePhoto} style={styles.photoAction}>
+                  <Text>Confirm removal</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(false)} style={styles.photoAction}>
+                  <Text>Keep photo</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(true)} style={styles.photoAction}>
+                <Text>Remove photo</Text>
+              </Pressable>
+            ))}
             {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
             <Pressable accessibilityRole="button" disabled={photoBusy} onPress={closePhotoEditor} style={styles.photoAction}>
               <Text>Cancel</Text>

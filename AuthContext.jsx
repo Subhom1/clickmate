@@ -14,25 +14,28 @@ const AuthProvider = ({ children }) => {
   const platform = Platform.OS;
   const setUserMongoData = useSetAtom(userState);
   useEffect(() => {
+    let requestId = 0;
     // Add listener for authentication state changes
     const subscribe = Auth.onAuthStateChanged((user) => {
+      const currentRequest = ++requestId;
       setUser(user);
       if (user?.uid) {
         const getUserInfo = async () => {
-          await axios.get(`http://${IP}:5051/user/${user.email}`)
-            .then((res) => {
-              setUserMongoData(res.data);
-            })
-            .catch((e) =>
-              console.error(e, "Error message: mongodb user details")
-            );
+          try {
+            const res = await axios.get(`http://${IP}:5051/user/${user.email}`);
+            if (currentRequest === requestId) setUserMongoData(res.data);
+          } catch (e) {
+            if (currentRequest === requestId) console.error(e, "Error message: mongodb user details");
+          }
         };
         getUserInfo();
+      } else {
+        setUserMongoData(null);
       }
     });
 
     // Clean up listener on unmount
-    return () => subscribe();
+    return () => { requestId++; subscribe(); };
   }, []);
 
   return (

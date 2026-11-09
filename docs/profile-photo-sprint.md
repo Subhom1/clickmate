@@ -10,7 +10,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | 1 | Discover repository and API; add native selection, square export, preview, cancellation, permissions, tests | Complete with platform and backend blockers noted below |
 | 2 | Connect typed upload adapter to a confirmed backend contract, or isolate a mock and document the dependency | Complete as contract-driven adapter; real routes remain blocked |
 | 3 | Add upload progress, retries, and replacement flow | Complete as frontend flow; backend and editor simulator checks remain blocked |
-| 4 | Add removal flow and persistence refresh | Pending |
+| 4 | Add removal flow and persistence refresh | Complete as frontend flow; backend persistence unverified |
 | 5 | Propagate avatars across relevant screens | Pending |
 | 6 | Platform and end-to-end validation, accessibility, error recovery | Pending |
 | 7 | Full regression, cleanup, acceptance report | Pending |
@@ -90,6 +90,14 @@ frontend regression sprint in `tests/SPRINT.md`.
 - Added deterministic tests for retry, picker cancellation during replacement, mismatched response, and the confirmation stage. All 25 Jest suites / 125 tests pass. iOS and Android JavaScript exports pass. This repository has no lint or TypeScript scripts; the `--if-present` checks performed no work.
 - iOS: launched ClickMate on a booted iPhone 18 Pro and visually verified the Home screen. The app logged an Axios timeout fetching MongoDB user details, so the authenticated photo editor could not be exercised. Screenshot: `/private/tmp/clickmate-day3-ios.png`. Android: no attached emulator. Neither platform's photo flow is accepted yet.
 - Next priority: removal UI and profile refresh behavior, while retaining the explicit backend dependency until endpoints and durable avatar metadata are confirmed.
+
+## Day 4 continuation (9 November)
+
+- Added an explicit two-step photo removal control. Cancellation leaves the avatar intact; a failed or mismatched removal response keeps the confirmation sheet and current avatar. A confirmed response updates the shared user atom to `avatarUrl: null`.
+- The auth profile fetch already restores avatar metadata from the existing user response. It now clears cached profile state on sign-out and ignores a profile response arriving after sign-out, preventing a stale avatar from reappearing.
+- Added positive and negative removal tests and auth restoration/race tests. The isolated worktree passed 25 Jest suites / 130 tests. iOS and Android JavaScript exports passed after linking the ignored local Firebase configuration for bundling. No secret was staged.
+- No lint or TypeScript scripts are configured. No Android emulator was attached; no iOS simulator was booted. Native removal behavior remains unverified.
+- The production removal API still reports unavailable because the backend endpoint and durable avatar response are not confirmed. Next: shared avatars across relevant screens.
 
 ## Backend contract needed
 

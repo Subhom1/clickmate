@@ -28,6 +28,7 @@ function AuthProbe() {
       <Text>{user?.email ?? "signed out"}</Text>
       <Text>{platform}</Text>
       <Text>{userData?.name ?? "no profile"}</Text>
+      <Text>{userData?.avatarUrl ?? "no avatar"}</Text>
     </View>
   );
 }
@@ -97,5 +98,27 @@ describe("AuthProvider", () => {
       view.unmount();
     });
     expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores avatar metadata from a fresh profile response", async () => {
+    axios.get.mockResolvedValue({ data: { name: "Casey User", avatarUrl: "https://example.com/avatar.jpg" } });
+    await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
+    await act(async () => {
+      mockAuthListener.mock.calls[0][0]({ uid: "u-1", email: "casey@example.com" });
+    });
+    expect(screen.getByText("https://example.com/avatar.jpg")).toBeOnTheScreen();
+  });
+
+  it("clears the avatar on sign-out and ignores an old profile response", async () => {
+    let resolveProfile;
+    axios.get.mockReturnValue(new Promise((resolve) => { resolveProfile = resolve; }));
+    await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
+    const onAuthChange = mockAuthListener.mock.calls[0][0];
+    await act(async () => { onAuthChange({ uid: "u-1", email: "casey@example.com" }); });
+    await act(async () => { onAuthChange(null); });
+    await act(async () => { resolveProfile({ data: { name: "Old User", avatarUrl: "https://example.com/old.jpg" } }); });
+    expect(screen.getByText("signed out")).toBeOnTheScreen();
+    expect(screen.getByText("no avatar")).toBeOnTheScreen();
+    expect(screen.getByText("no profile")).toBeOnTheScreen();
   });
 });
