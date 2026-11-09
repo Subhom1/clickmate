@@ -3,7 +3,7 @@ import { View, Text, StatusBar, Pressable } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { IP } from "../../constant";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 
 export default function VisitorProfile({ route }) {

@@ -19,7 +19,7 @@ import { userState } from "../../state/atoms/UserState";
 import { matchState } from "../../state/atoms/MatchState";
 import { chatState } from "../../state/atoms/ChatState";
 import { IP } from "../../../constant";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import Toast from "react-native-root-toast";
 const ChatScreen = ({ route }) => {
   const { platform, secondUserInfo } = route.params;

@@ -98,9 +98,9 @@ Follow these steps to run ClickMate locally in your development environment.
 ### Prerequisites
 
 Ensure you have the following installed on your machine:
-*   Node.js 22.13 or newer (Node 22 LTS recommended for Expo SDK 57)
+*   Node.js 22.13+, 24.3+, or 26+ (odd-numbered Node releases are unsupported by Expo SDK 58)
 *   npm or yarn
-*   Expo Go compatible with SDK 57, or Xcode with an iOS Simulator
+*   Expo Go compatible with SDK 58, or Xcode with an iOS Simulator for a native build
 
 ### 1. Clone & Install Dependencies
 

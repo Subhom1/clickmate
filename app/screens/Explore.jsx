@@ -14,7 +14,7 @@ import { exploreState } from "../state/atoms/ExploreState";
 import axios from "axios";
 import { IP } from "../../constant";
 import CarouselComp from "../components/CarouselComp";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Explore({ route }) {
   const [explores] = useAtom(exploreState);
