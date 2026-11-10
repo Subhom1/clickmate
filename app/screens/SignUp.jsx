@@ -62,7 +62,8 @@ export default function Signup({ route }) {
           email,
           password
         );
-        await handleMongoDBRegister({ name, email });
+        const token = await response.user.getIdToken();
+        await handleMongoDBRegister({ name, email }, token);
         alert("Registration Successful: Check your email!");
       } catch (error) {
         console.error(error, "error");
@@ -86,9 +87,11 @@ export default function Signup({ route }) {
       signUpEmailPw();
     }
   };
-  const handleMongoDBRegister = async (user) => {
+  const handleMongoDBRegister = async (user, token) => {
     await axios
-      .post(`http://${IP}:5051/register`, user)
+      .post(`http://${IP}:5051/register`, user, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then((res) => {
         setUserMongoData(res.data.data);
       })

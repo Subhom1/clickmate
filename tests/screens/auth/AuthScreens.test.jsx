@@ -177,7 +177,9 @@ describe("Sign up", () => {
     expect(screen.queryByText("Sign Up")).toBeNull();
     expect(axios.post).not.toHaveBeenCalled();
     expect(global.alert).not.toHaveBeenCalled();
-    await act(async () => { resolveSignup({ user: { uid: "u-2" } }); });
+    await act(async () => {
+      resolveSignup({ user: { uid: "u-2", getIdToken: jest.fn().mockResolvedValue("id-token") } });
+    });
     expect(axios.post).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Sign Up")).toBeOnTheScreen();
   });
@@ -196,7 +198,9 @@ describe("Sign up", () => {
   });
 
   it("creates an account, registers the profile, and navigates back to login", async () => {
-    createUserWithEmailAndPassword.mockResolvedValue({ user: { uid: "u-2" } });
+    createUserWithEmailAndPassword.mockResolvedValue({
+      user: { uid: "u-2", getIdToken: jest.fn().mockResolvedValue("id-token") },
+    });
     axios.post.mockResolvedValue({ data: { data: { name: "Casey User" } } });
     await renderSignup();
     await fillSignup();
@@ -206,10 +210,11 @@ describe("Sign up", () => {
       expect(createUserWithEmailAndPassword).toHaveBeenCalledWith({}, "casey@example.com", "secret1")
     );
     await waitFor(() =>
-      expect(axios.post).toHaveBeenCalledWith(expect.stringMatching(/\/register$/), {
-        name: "Casey User",
-        email: "casey@example.com",
-      })
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.stringMatching(/\/register$/),
+        { name: "Casey User", email: "casey@example.com" },
+        { headers: { Authorization: "Bearer id-token" } }
+      )
     );
     expect(global.alert).toHaveBeenCalledWith("Registration Successful: Check your email!");
     await fireEvent.press(screen.getByText("Login"));
