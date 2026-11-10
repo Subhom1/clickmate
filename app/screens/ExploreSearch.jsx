@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import { IP } from "../../constant";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";

@@ -9,7 +9,7 @@ import { createSocketMock } from "../../mocks/socket";
 
 const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
-jest.mock("expo-router/react-navigation", () => ({ useNavigation: () => mockNavigation }));
+jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
 jest.mock("../../../constant", () => ({ IP: "localhost" }));
@@ -59,6 +59,16 @@ describe("People", () => {
     });
     await fireEvent.press(screen.getByText("message"));
     expect(mockNavigation.navigate).toHaveBeenCalledWith("ChatScreen", { secondUserInfo: expect.objectContaining({ _id: "friend-1" }) });
+  });
+
+  it("shows a friend's avatar when supplied and initials otherwise", async () => {
+    axios.get.mockResolvedValue({ data: [] });
+    await renderPeople({ _id: "me-1", friends: [
+      { ...friends[0], avatarUrl: "https://example.com/alex.jpg" },
+      { _id: "friend-2", fullname: "Sam Friend", email: "sam@example.com" },
+    ] });
+    expect(screen.getByLabelText("Alex Friend profile photo")).toHaveProp("source", { uri: "https://example.com/alex.jpg" });
+    expect(screen.getByText("SF")).toBeOnTheScreen();
   });
 
   it("refreshes unread counts on socket updates and cleans up", async () => {

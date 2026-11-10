@@ -4,7 +4,7 @@ import axios from "axios";
 import VisitorProfile from "../../../app/screens/VisitorProfile";
 
 const mockNavigation = { goBack: jest.fn() };
-jest.mock("expo-router/react-navigation", () => ({ useNavigation: () => mockNavigation }));
+jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("axios", () => ({ get: jest.fn() }));
 jest.mock("../../../constant", () => ({ IP: "localhost" }));
 jest.mock("@expo/vector-icons/MaterialIcons", () => {

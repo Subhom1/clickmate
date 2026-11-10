@@ -12,7 +12,7 @@ export const InitialsCircle = ({ name = "", styles = {}, focused, nav, photoUri 
   const initials = getInitials(name);
   const backgroundColor = focused ? "#67AB0F" : "#A7B0AD";
   return (
-    <View style={[styles.circle, nav && { backgroundColor }]}>
+    <View style={[{ alignItems: "center", justifyContent: "center", backgroundColor: "#A7B0AD", overflow: "hidden" }, styles.circle, nav && { backgroundColor }]}>
       {photoUri ? (
         <Image
           accessibilityLabel={`${name || "User"} profile photo`}

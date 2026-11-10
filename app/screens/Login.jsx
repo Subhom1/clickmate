@@ -15,7 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { signInWithEmailAndPassword, GoogleAuthProvider } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import * as WebBrowser from "expo-web-browser";
 export default function Login() {
   const [isChecked, setChecked] = useState(false);

@@ -11,7 +11,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | 2 | Connect typed upload adapter to a confirmed backend contract, or isolate a mock and document the dependency | Complete as contract-driven adapter; real routes remain blocked |
 | 3 | Add upload progress, retries, and replacement flow | Complete as frontend flow; backend and editor simulator checks remain blocked |
 | 4 | Add removal flow and persistence refresh | Complete as frontend flow; backend persistence unverified |
-| 5 | Propagate avatars across relevant screens | Pending |
+| 5 | Propagate avatars across relevant screens | Complete for supplied avatar URLs; backend mapping and expiry refresh pending |
 | 6 | Platform and end-to-end validation, accessibility, error recovery | Pending |
 | 7 | Full regression, cleanup, acceptance report | Pending |
 
@@ -99,6 +99,14 @@ frontend regression sprint in `tests/SPRINT.md`.
 - No lint or TypeScript scripts are configured. No Android emulator was attached; no iOS simulator was booted. Native removal behavior remains unverified.
 - The production removal API still reports unavailable because the backend endpoint and durable avatar response are not confirmed. Next: shared avatars across relevant screens.
 
+## Day 5 continuation (10 November)
+
+- Integrated the current `main` branch, which upgraded to Expo SDK 58 and React Native 0.88. Resolved package conflicts using Expo SDK 58 recommended versions for image picker, image manipulator, and file system. The merged baseline passed 130 tests before the avatar changes.
+- Added the shared `InitialsCircle` avatar to People, visitor profile, search result, and chat messages. Existing profile and tab avatars already use it. Initials remain the fallback when no URL is supplied.
+- The backend now documents authenticated multipart `POST /v1/me/avatar/uploads`, completion, profile retrieval, and removal routes in `docs/photo-upload-backend-sprint.md` on its main branch. This differs from the earlier frontend PUT adapter. The production frontend adapter remains unavailable; a verified multipart client, Firebase token use, response mapping, and five-minute read URL refresh are required before real integration. Live storage and database tests remain unverified.
+- The merged baseline passed 25 suites / 130 tests; avatar propagation passed 25 suites / 131 tests. iOS and Android JavaScript exports passed on SDK 58. No lint or TypeScript scripts are configured. An iOS simulator was booted by another session and was not disturbed; no Android emulator was attached. Native avatar display was not verified.
+- Next priority: adapt the frontend to the confirmed multipart contract and expiring avatar URLs, then run platform acceptance checks.
+
 ## Backend contract needed
 
 The backend must specify authenticated endpoints and response fields for:
@@ -110,16 +118,13 @@ The backend must specify authenticated endpoints and response fields for:
 3. Removing the current photo and returning updated profile metadata.
 4. Fetching profiles and friend data with avatar metadata after app restart.
 
-No such endpoints are assumed to exist. Until confirmed, the Save action gives
-an explicit unavailable message and does not change profile state or claim a
-successful upload. A local preview is not persistent.
-
-The expected adapter interface is `createSession(userId, {mimeType, size})`,
-`confirm(userId, storageReference)`, and `remove(userId)`. `createSession` must
-return `{uploadUrl, storageReference, headers}`. `confirm` must return
-`{id, avatarUrl}` for the same user. `remove` must return `{id, avatarUrl: null}`.
-The endpoint paths, authentication mechanism, storage response codes, and
-durable avatar field name require backend confirmation before wiring.
+The backend main branch now documents authenticated avatar routes. The frontend
+still has an earlier PUT-shaped adapter and does not call these routes. Save
+and removal therefore remain explicitly unavailable in production code.
+The confirmed upload session returns a multipart POST URL and fields; the
+completion and profile routes return an avatar object with a short-lived read
+URL. The client must never store that URL as durable avatar identity. See the
+Day 5 note and backend contract document before wiring the replacement adapter.
 
 ## References
 

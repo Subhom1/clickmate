@@ -10,11 +10,12 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
-import { useNavigation } from "expo-router/react-navigation";
+import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";
 import { IP } from "../../constant";
+import { InitialsCircle } from "../components/CreateAvatar";
 
 export default function Result({ route }) {
   const matchUser = useAtomValue(matchState);
@@ -55,9 +56,12 @@ export default function Result({ route }) {
           You can now Chat with the user,{"\n"} or find someone next.
         </Text>
         {matchedUser && (
+          <View style={{ alignItems: "center", marginTop: 32 }}>
+            <InitialsCircle name={matchedUser.fullname} photoUri={matchedUser.avatarUrl} styles={{ circle: { width: 72, height: 72, borderRadius: 36 }, initials: { fontSize: 22 } }} />
           <Text className="text-2xl text-center mt-12 capitalize text-secondary_blue_deep">
             {matchedUser.fullname}
           </Text>
+          </View>
         )}
         <View className="flex-row justify-evenly mt-8">
           {/* <TouchableOpacity className=" bg-primary_green rounded-3xl py-3 w-28 self-center">

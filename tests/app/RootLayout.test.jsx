@@ -4,14 +4,14 @@ import { Provider } from "jotai";
 import { Keyboard } from "react-native";
 import { RootLayout } from "../../_layout";
 
-jest.mock("expo-router/react-navigation", () => {
+jest.mock("@react-navigation/native", () => {
   const React = require("react");
   const { View, Text } = require("react-native");
   return {
     NavigationContainer: ({ children }) => React.createElement(View, null, children),
   };
 });
-jest.mock("expo-router/native-stack", () => {
+jest.mock("@react-navigation/native-stack", () => {
   const React = require("react");
   const { View, Text } = require("react-native");
   return {
@@ -27,7 +27,7 @@ jest.mock("expo-router/native-stack", () => {
     }),
   };
 });
-jest.mock("expo-router/js-tabs", () => {
+jest.mock("@react-navigation/bottom-tabs", () => {
   const React = require("react");
   const { View, Text } = require("react-native");
   return {

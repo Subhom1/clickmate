@@ -21,7 +21,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation, useRoute } from "expo-router/react-navigation";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { useSetAtom } from "jotai";

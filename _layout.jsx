@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Keyboard } from "react-native";
-import { NavigationContainer } from "expo-router/react-navigation";
-import { createNativeStackNavigator } from "expo-router/native-stack";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from "./app/screens/Login";
 import SignUp from "./app/screens/SignUp";
 import Home from "./app/screens/Home";
@@ -9,7 +9,7 @@ import Explore from "./app/screens/Explore";
 import People from "./app/screens/People";
 import Profile from "./app/screens/Profile";
 import Result from "./app/screens/Result";
-import { createBottomTabNavigator } from "expo-router/js-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "@expo/vector-icons/Entypo";
 import Icon2 from "@expo/vector-icons/Octicons";
 import { userState } from "./app/state/atoms/UserState";
