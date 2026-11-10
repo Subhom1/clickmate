@@ -19,13 +19,16 @@ const AuthProvider = ({ children }) => {
       setUser(user);
       if (user?.uid) {
         const getUserInfo = async () => {
-          await axios.get(`http://${IP}:5051/user/${user.email}`)
-            .then((res) => {
-              setUserMongoData(res.data);
-            })
-            .catch((e) =>
-              console.error(e, "Error message: mongodb user details")
-            );
+          try {
+            const token = await user.getIdToken();
+            const res = await axios.get(`http://${IP}:5051/user/${user.email}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log(res.data, "MongoDB user details");
+            setUserMongoData(res.data);
+          } catch (e) {
+            console.error(e, "Error message: mongodb user details");
+          }
         };
         getUserInfo();
       }
