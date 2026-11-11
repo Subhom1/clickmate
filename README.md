@@ -130,23 +130,30 @@ export const firebaseSecret = {
 };
 ```
 
-#### B. Update Backend Server IP
-Because mobile simulators and physical devices cannot resolve `localhost` in the same way, you must configure the local IP address of your host machine. This is handled dynamically via environment variables in the `.env` file at the root of the project:
+#### B. Connect to the Backend Server
+When Expo Go connects over the local network, the app uses the Expo development server's host address for the backend on port `5051`. The phone and Mac must be on a network where the phone can reach the Mac. If Expo does not provide a local host address, set a fallback in the root `.env` file:
 
 ```env
 # .env
 EXPO_PUBLIC_IP=192.168.X.X
 ```
 
-In `constant.js`, this variable is read automatically:
+In `constant.js`, Expo's local host takes priority over that fallback:
 
 ```javascript
 // constant.js
-export const IP = process.env.EXPO_PUBLIC_IP;
+import Constants from "expo-constants";
+
+const expoHost = Constants.expoConfig?.hostUri?.match(
+  /^((?:\d{1,3}\.){3}\d{1,3}|localhost|[^:]+\.local)(?::\d+)?$/,
+)?.[1];
+export const IP = expoHost ?? process.env.EXPO_PUBLIC_IP;
 ```
 
 > [!TIP]
 > On macOS, retrieve your local IP by running `ipconfig getifaddr en0` in the terminal. On Windows, execute `ipconfig` in the Command Prompt.
+
+Expo's `--tunnel` connection only tunnels the development server, not the backend on port `5051`. For a phone outside the Mac's local network, use a reachable backend URL.
 
 
 ---
@@ -206,7 +213,7 @@ npm run ios:go -- --clear
 
 `npm run ios` remains the native-build command and requires an Xcode build. For Expo Go, use `ios:go`.
 
-Run the backend separately on port 5051 and set `EXPO_PUBLIC_IP` in `.env` to this Mac's LAN address. Restart Metro after changing `.env`. A running frontend does not verify MongoDB connectivity: if `/interests` or `/explore` returns HTTP 500, check the backend's `MONGODB_URI` and database connection.
+Run the backend separately on port 5051. With Expo Go on the local network, reconnect the app to Expo after changing networks; its new development server address is used automatically. If you use the `.env` fallback, restart Metro after changing it. A running frontend does not verify MongoDB connectivity: if `/interests` or `/explore` returns HTTP 500, check the backend's `MONGODB_URI` and database connection.
 
 *   Press **`a`** to open the Android emulator.
 *   Press **`i`** to open the iOS simulator.

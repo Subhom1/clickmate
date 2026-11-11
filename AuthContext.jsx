@@ -23,7 +23,10 @@ const AuthProvider = ({ children }) => {
       if (user?.uid) {
         const getUserInfo = async () => {
           try {
-            const res = await axios.get(`http://${IP}:5051/user/${user.email}`);
+            const token = await user.getIdToken();
+            const res = await axios.get(`http://${IP}:5051/user/${user.email}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             if (currentRequest === requestId) setUserMongoData(res.data);
             try {
               const avatar = await profilePhotoApi.getProfile();

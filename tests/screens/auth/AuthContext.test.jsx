@@ -69,7 +69,11 @@ describe("AuthProvider", () => {
     try {
       await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
       await act(async () => {
-        mockAuthListener.mock.calls[0][0]({ uid: "u-1", email: "casey@example.com" });
+        mockAuthListener.mock.calls[0][0]({
+          uid: "u-1",
+          email: "casey@example.com",
+          getIdToken: jest.fn().mockResolvedValue("id-token"),
+        });
       });
 
       expect(screen.getByText("casey@example.com")).toBeOnTheScreen();
@@ -90,11 +94,18 @@ describe("AuthProvider", () => {
     const onAuthChange = mockAuthListener.mock.calls[0][0];
 
     await act(async () => {
-      onAuthChange({ uid: "user-1", email: "casey@example.com" });
+      onAuthChange({
+        uid: "user-1",
+        email: "casey@example.com",
+        getIdToken: jest.fn().mockResolvedValue("id-token"),
+      });
     });
 
     expect(screen.getByText("casey@example.com")).toBeOnTheScreen();
-    expect(axios.get).toHaveBeenCalledWith(expect.stringMatching(/\/user\/casey@example\.com$/));
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringMatching(/\/user\/casey@example\.com$/),
+      { headers: { Authorization: "Bearer id-token" } }
+    );
     expect(screen.getByText("Casey User")).toBeOnTheScreen();
 
     await act(async () => {
