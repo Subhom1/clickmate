@@ -103,9 +103,17 @@ frontend regression sprint in `tests/SPRINT.md`.
 
 - Integrated the current `main` branch, which upgraded to Expo SDK 58 and React Native 0.88. Resolved package conflicts using Expo SDK 58 recommended versions for image picker, image manipulator, and file system. The merged baseline passed 130 tests before the avatar changes.
 - Added the shared `InitialsCircle` avatar to People, visitor profile, search result, and chat messages. Existing profile and tab avatars already use it. Initials remain the fallback when no URL is supplied.
-- The backend now documents authenticated multipart `POST /v1/me/avatar/uploads`, completion, profile retrieval, and removal routes in `docs/photo-upload-backend-sprint.md` on its main branch. This differs from the earlier frontend PUT adapter. The production frontend adapter remains unavailable; a verified multipart client, Firebase token use, response mapping, and five-minute read URL refresh are required before real integration. Live storage and database tests remain unverified.
+- The backend now documents authenticated multipart `POST /v1/me/avatar/uploads`, completion, profile retrieval, and removal routes in `docs/photo-upload-backend-sprint.md` on its main branch. Live storage and database tests remain unverified.
 - The merged baseline passed 25 suites / 130 tests; avatar propagation passed 25 suites / 131 tests. iOS and Android JavaScript exports passed on SDK 58. No lint or TypeScript scripts are configured. An iOS simulator was booted by another session and was not disturbed; no Android emulator was attached. Native avatar display was not verified.
 - Next priority: adapt the frontend to the confirmed multipart contract and expiring avatar URLs, then run platform acceptance checks.
+
+## User-requested continuation (10 November)
+
+- Verified the backend router is mounted on `main` and uses Firebase bearer authentication. The frontend now requests a signed multipart POST session, sends the processed JPEG with every returned form field, confirms the media ID, retrieves profile avatar metadata, and calls authenticated deletion. The earlier PUT factory remains solely for isolated compatibility tests.
+- Production builds require `EXPO_PUBLIC_API_BASE_URL` set to the HTTPS backend origin; the existing LAN HTTP host is used only in Expo development mode. The bearer token is sent only to that backend origin, never the signed object-storage URL.
+- The profile avatar is left-aligned above the name. Before upload it shows a round camera-plus placeholder; afterward tapping the photo offers upload or delete. Gallery selection produces the existing true square 512×512 crop and preview before save. Deletion retains its confirmation step.
+- Avatar metadata includes the durable media ID and a short-lived read URL. Authentication refreshes it on sign-in, and the profile refreshes near expiry and when foregrounded. Neither URL nor credentials are committed as durable storage.
+- Deterministic frontend tests cover the multipart request, signed fields, unsafe session, invalid confirmation, and UI states. All 25 suites / 136 tests pass. The updated app launched on the booted iPhone simulator, but the user-details request failed because the local backend was not listening on port 5051; the authenticated profile and live upload were not visually verified. Screenshot: `/private/tmp/clickmate-profile-new-iphone.png`. Live S3/MongoDB remain unverified.
 
 ## Backend contract needed
 
@@ -118,13 +126,12 @@ The backend must specify authenticated endpoints and response fields for:
 3. Removing the current photo and returning updated profile metadata.
 4. Fetching profiles and friend data with avatar metadata after app restart.
 
-The backend main branch now documents authenticated avatar routes. The frontend
-still has an earlier PUT-shaped adapter and does not call these routes. Save
-and removal therefore remain explicitly unavailable in production code.
-The confirmed upload session returns a multipart POST URL and fields; the
-completion and profile routes return an avatar object with a short-lived read
-URL. The client must never store that URL as durable avatar identity. See the
-Day 5 note and backend contract document before wiring the replacement adapter.
+The backend main branch documents authenticated avatar routes and the frontend
+now calls them. The upload session returns a multipart POST URL and fields;
+completion and profile retrieval return an avatar object with a five-minute
+private read URL. The client retains the media ID and refreshes that URL. Live
+storage/database integration, staging configuration, and device acceptance
+still need verification.
 
 ## References
 

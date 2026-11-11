@@ -11,6 +11,7 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  AppState,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
@@ -22,7 +23,7 @@ import { IP } from "../../constant";
 import Icon from "@expo/vector-icons/Feather";
 import { InitialsCircle } from "../components/CreateAvatar";
 import { selectProfilePhoto } from "../profilePhoto/selectPhoto";
-import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../profilePhoto/api";
+import { profilePhotoApi } from "../profilePhoto/api";
 
 export default function Profile({ route }) {
   const [userData, setUserData] = useAtom(userState);
@@ -78,7 +79,7 @@ export default function Profile({ route }) {
       if (result?.id !== userData._id || !result.avatarUrl) {
         throw new Error("The updated profile photo was not returned.");
       }
-      setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl }));
+      setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl, avatarMediaId: result.avatarMediaId, avatarExpiresAt: result.avatarExpiresAt }));
       setPhotoDraft(null);
       setPhotoProgress(null);
       setPhotoCanRetry(false);
@@ -86,7 +87,7 @@ export default function Profile({ route }) {
     } catch (error) {
       setPhotoError(error?.message || "The photo could not be saved.");
       setPhotoProgress(null);
-      setPhotoCanRetry(!(error instanceof ProfilePhotoApiUnavailableError));
+      setPhotoCanRetry(true);
     } finally {
       setPhotoBusy(false);
     }
@@ -101,7 +102,7 @@ export default function Profile({ route }) {
       if (result?.id !== userData._id || result.avatarUrl !== null) {
         throw new Error("Photo removal was not confirmed.");
       }
-      setUserData((current) => ({ ...current, avatarUrl: null }));
+      setUserData((current) => ({ ...current, avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null }));
       closePhotoEditorAfterRemoval();
     } catch (error) {
       setPhotoError(error?.message || "The photo could not be removed.");
@@ -118,6 +119,25 @@ export default function Profile({ route }) {
   useEffect(() => {
     getAllInterests();
   }, []);
+  useEffect(() => {
+    if (!userData?._id || !userData?.avatarMediaId || !userData?.avatarExpiresAt) return;
+    let active = true;
+    let retryTimer;
+    const refresh = async () => {
+      try {
+        const avatar = await profilePhotoApi.getProfile();
+        if (active) setUserData((current) => current?._id === userData._id ? { ...current, ...avatar } : current);
+      } catch {
+        if (active) retryTimer = setTimeout(refresh, 30000);
+      }
+    };
+    const delay = Math.max(0, Date.parse(userData.avatarExpiresAt) - Date.now() - 30000);
+    const expiryTimer = setTimeout(refresh, Number.isFinite(delay) ? delay : 0);
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && Date.parse(userData.avatarExpiresAt) - Date.now() < 30000) refresh();
+    });
+    return () => { active = false; clearTimeout(expiryTimer); clearTimeout(retryTimer); subscription.remove(); };
+  }, [userData?._id, userData?.avatarMediaId, userData?.avatarExpiresAt]);
   useEffect(() => {
     if (userData) {
       setUserInterestsIDs(userData?.interests.map((item) => item._id));
@@ -189,15 +209,14 @@ export default function Profile({ route }) {
           accessibilityRole="button"
           accessibilityLabel="Edit profile photo"
           onPress={() => setPhotoEditorOpen(true)}
-          className="self-center mt-8 mb-3"
-          style={{ minWidth: 72, minHeight: 72, alignItems: "center", justifyContent: "center" }}
+          className="self-start mt-8 mb-3"
+          style={{ minWidth: 88, minHeight: 88, alignSelf: "flex-start", alignItems: "center", justifyContent: "center" }}
         >
-          <InitialsCircle
+          {userData?.avatarUrl ? <InitialsCircle
             name={userData?.fullname || ""}
             photoUri={userData?.avatarUrl}
             styles={{ circle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#A7B0AD", overflow: "hidden", alignItems: "center", justifyContent: "center" }, initials: { color: "white", fontSize: 22 } }}
-          />
-          <Text className="text-primary_green mt-1">Edit photo</Text>
+          /> : <View style={styles.photoPlaceholder}><Icon name="camera" size={28} color="#67AB0F" /><View style={styles.photoPlus}><Icon name="plus" size={16} color="white" /></View></View>}
         </Pressable>
         <View
           className={`flex-row items-center justify-end ${
@@ -368,12 +387,12 @@ export default function Profile({ route }) {
                 {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
               </Text>
             )}
-            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
-              <Text>Choose from gallery</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("camera")} style={styles.photoAction}>
-              <Text>Take photo</Text>
-            </Pressable>
+            {!photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
+              <Text>{userData?.avatarUrl ? "Upload new photo" : "Choose from gallery"}</Text>
+            </Pressable>}
+            {photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
+              <Text>Choose another photo</Text>
+            </Pressable>}
             {photoDraft && (
               <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={styles.photoAction}>
                 <Text>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
@@ -391,7 +410,7 @@ export default function Profile({ route }) {
               </>
             ) : (
               <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(true)} style={styles.photoAction}>
-                <Text>Remove photo</Text>
+                <Text>Delete photo</Text>
               </Pressable>
             ))}
             {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
@@ -415,4 +434,6 @@ const styles = StyleSheet.create({
   photoPreview: { width: 220, height: 220, borderRadius: 110 },
   photoAction: { minHeight: 48, minWidth: 220, borderRadius: 24, backgroundColor: "#EAF5E3", justifyContent: "center", alignItems: "center" },
   photoError: { color: "#AB0F12", textAlign: "center" },
+  photoPlaceholder: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#EAF5E3", borderWidth: 1, borderColor: "#A7D27C", alignItems: "center", justifyContent: "center" },
+  photoPlus: { position: "absolute", right: -3, bottom: -3, width: 24, height: 24, borderRadius: 12, backgroundColor: "#67AB0F", alignItems: "center", justifyContent: "center" },
 });

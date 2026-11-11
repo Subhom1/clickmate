@@ -1,8 +1,11 @@
 import { File, UploadType } from "expo-file-system";
+import axios from "axios";
+import { Auth } from "../../FirebaseConfig";
+import { IP } from "../../constant";
 
 /**
  * @typedef {{uri: string, width: number, height: number, mimeType: 'image/jpeg'}} ProcessedProfilePhoto
- * @typedef {{id: string, avatarUrl: string | null}} ProfilePhotoResult
+ * @typedef {{id: string, avatarUrl: string | null, avatarMediaId?: string | null, avatarExpiresAt?: string | null}} ProfilePhotoResult
  * @typedef {{save: (userId: string, photo: ProcessedProfilePhoto, onProgress?: (fraction: number) => void) => Promise<ProfilePhotoResult>, remove: (userId: string) => Promise<ProfilePhotoResult>}} ProfilePhotoApi
  * @typedef {{uploadUrl: string, storageReference: string, headers: Record<string, string>}} UploadSession
  */
@@ -87,12 +90,77 @@ export function createPresignedProfilePhotoApi({ createSession, confirm, remove,
   };
 }
 
-/** @type {ProfilePhotoApi} */
-export const profilePhotoApi = {
-  async save() {
-    throw new ProfilePhotoApiUnavailableError();
-  },
-  async remove() {
-    throw new ProfilePhotoApiUnavailableError();
-  },
-};
+/**
+ * Implements the backend's authenticated multipart avatar contract. The upload
+ * URL receives only the signed form fields and file; the Firebase token goes
+ * solely to ClickMate's API.
+ */
+export function createMultipartProfilePhotoApi({ request, getToken, baseUrl, FileClass = File }) {
+  const authenticated = async (method, path, data) => {
+    if (!baseUrl?.startsWith("https://") && !(__DEV__ && baseUrl?.startsWith("http://"))) {
+      throw new ProfilePhotoApiError("A secure profile photo API URL is required.");
+    }
+    const token = await getToken();
+    if (!token) throw new ProfilePhotoApiError("Please sign in to manage your photo.");
+    const response = await request({ method, url: `${baseUrl}${path}`, data, headers: { Authorization: `Bearer ${token}` } });
+    return response.data;
+  };
+  const parseAvatar = (avatar) => {
+    if (!avatar || typeof avatar.mediaId !== "string" || !avatar.mediaId ||
+        typeof avatar.url !== "string" || !avatar.url.startsWith("https://") ||
+        !Number.isFinite(Date.parse(avatar.expiresAt)) || Date.parse(avatar.expiresAt) <= Date.now()) {
+      throw new ProfilePhotoApiError("The updated profile photo was not returned.");
+    }
+    return { avatarUrl: avatar.url, avatarMediaId: avatar.mediaId, avatarExpiresAt: avatar.expiresAt };
+  };
+  return {
+    async save(userId, photo, onProgress) {
+      if (!userId || !photo?.uri?.startsWith("file://") || photo.mimeType !== "image/jpeg" || photo.width !== 512 || photo.height !== 512) {
+        throw new ProfilePhotoApiError("The processed profile photo is invalid.");
+      }
+      const file = new FileClass(photo.uri);
+      if (!file.exists || !Number.isFinite(file.size) || file.size <= 0 || file.size > MAX_PHOTO_BYTES) {
+        throw new ProfilePhotoApiError("The profile photo must be a file smaller than 2 MB.");
+      }
+      onProgress?.(0);
+      const session = await authenticated("post", "/v1/me/avatar/uploads", { contentType: photo.mimeType, sizeBytes: file.size });
+      if (session?.method !== "POST" || !session.mediaId || !session.uploadUrl?.startsWith("https://") ||
+          !session.fields || typeof session.fields !== "object" || Array.isArray(session.fields) ||
+          !Object.values(session.fields).every((value) => typeof value === "string") ||
+          !Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) {
+        throw new ProfilePhotoApiError("The upload session is invalid.");
+      }
+      onProgress?.(0.1);
+      const uploaded = await file.upload(session.uploadUrl, {
+        httpMethod: "POST", uploadType: UploadType.MULTIPART, fieldName: "file", mimeType: photo.mimeType,
+        parameters: session.fields, sessionType: "foreground",
+        onProgress: ({ bytesSent, totalBytes }) => {
+          if (totalBytes > 0) onProgress?.(0.1 + Math.max(0, Math.min(1, bytesSent / totalBytes)) * 0.8);
+        },
+      });
+      if (uploaded.status < 200 || uploaded.status >= 300) throw new ProfilePhotoApiError("The photo transfer failed. Please try again.");
+      onProgress?.(0.9);
+      const completed = await authenticated("post", `/v1/me/avatar/uploads/${encodeURIComponent(session.mediaId)}/complete`);
+      if (completed?.success !== true) throw new ProfilePhotoApiError("The updated profile photo was not returned.");
+      const result = { id: userId, ...parseAvatar(completed.avatar) };
+      onProgress?.(1);
+      return result;
+    },
+    async remove(userId) {
+      if (!userId) throw new ProfilePhotoApiError("Missing user ID.");
+      const result = await authenticated("delete", "/v1/me/avatar");
+      if (result?.avatar !== null) throw new ProfilePhotoApiError("Photo removal was not confirmed.");
+      return { id: userId, avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null };
+    },
+    async getProfile() {
+      const result = await authenticated("get", "/v1/me/profile");
+      return result?.avatar === null ? { avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null } : parseAvatar(result?.avatar);
+    },
+  };
+}
+
+export const profilePhotoApi = createMultipartProfilePhotoApi({
+  request: axios,
+  getToken: () => Auth.currentUser?.getIdToken(),
+  baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || (__DEV__ ? `http://${IP}:5051` : ""),
+});

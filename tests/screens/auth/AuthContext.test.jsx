@@ -6,6 +6,7 @@ import axios from "axios";
 import { AuthContext, AuthProvider } from "../../../AuthContext";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { userState } from "../../../app/state/atoms/UserState";
+import { profilePhotoApi } from "../../../app/profilePhoto/api";
 
 const mockAuthListener = jest.fn();
 const mockUnsubscribe = jest.fn();
@@ -19,6 +20,7 @@ jest.mock("../../../FirebaseConfig", () => ({
   },
 }));
 jest.mock("axios", () => ({ __esModule: true, default: { get: jest.fn() } }));
+jest.mock("../../../app/profilePhoto/api", () => ({ profilePhotoApi: { getProfile: jest.fn() } }));
 
 function AuthProbe() {
   const { user, platform } = React.useContext(AuthContext);
@@ -35,6 +37,7 @@ function AuthProbe() {
 
 beforeEach(() => {
   jest.resetAllMocks();
+  profilePhotoApi.getProfile.mockResolvedValue({ avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null });
 });
 
 describe("AuthProvider", () => {
@@ -101,7 +104,8 @@ describe("AuthProvider", () => {
   });
 
   it("restores avatar metadata from a fresh profile response", async () => {
-    axios.get.mockResolvedValue({ data: { name: "Casey User", avatarUrl: "https://example.com/avatar.jpg" } });
+    axios.get.mockResolvedValue({ data: { _id: "me-1", name: "Casey User" } });
+    profilePhotoApi.getProfile.mockResolvedValue({ avatarUrl: "https://example.com/avatar.jpg", avatarMediaId: "media-1", avatarExpiresAt: new Date(Date.now() + 300000).toISOString() });
     await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
     await act(async () => {
       mockAuthListener.mock.calls[0][0]({ uid: "u-1", email: "casey@example.com" });

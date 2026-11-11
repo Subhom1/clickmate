@@ -6,6 +6,7 @@ import { useSetAtom } from "jotai";
 import axios from "axios";
 import { userState } from "./app/state/atoms/UserState";
 import { IP } from "./constant";
+import { profilePhotoApi } from "./app/profilePhoto/api";
 
 const AuthContext = createContext();
 
@@ -24,6 +25,14 @@ const AuthProvider = ({ children }) => {
           try {
             const res = await axios.get(`http://${IP}:5051/user/${user.email}`);
             if (currentRequest === requestId) setUserMongoData(res.data);
+            try {
+              const avatar = await profilePhotoApi.getProfile();
+              if (currentRequest === requestId) {
+                setUserMongoData((current) => current?._id === res.data?._id ? { ...current, ...avatar } : current);
+              }
+            } catch {
+              // The existing profile remains usable when avatar retrieval is unavailable.
+            }
           } catch (e) {
             if (currentRequest === requestId) console.error(e, "Error message: mongodb user details");
           }

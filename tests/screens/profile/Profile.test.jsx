@@ -49,6 +49,24 @@ const renderProfile = async (user = initialUser) => {
 };
 
 describe("Profile", () => {
+  it("shows a left-aligned camera placeholder and gallery choice before upload", async () => {
+    await renderProfile();
+    const trigger = screen.getByLabelText("Edit profile photo");
+    expect(trigger).toHaveStyle({ alignSelf: "flex-start" });
+    expect(screen.getByText("camera")).toBeOnTheScreen();
+    expect(screen.getByText("plus")).toBeOnTheScreen();
+    await fireEvent.press(trigger);
+    expect(screen.getByText("Choose from gallery")).toBeOnTheScreen();
+    expect(screen.queryByText("Delete photo")).toBeNull();
+  });
+
+  it("offers upload and delete choices for an existing photo", async () => {
+    await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    expect(screen.getByText("Upload new photo")).toBeOnTheScreen();
+    expect(screen.getByText("Delete photo")).toBeOnTheScreen();
+    expect(screen.queryByText("Take photo")).toBeNull();
+  });
   it("previews the actual processed image and clears it on cancel", async () => {
     selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512 });
     await renderProfile();
@@ -59,16 +77,16 @@ describe("Profile", () => {
     expect(screen.queryByLabelText("Cropped photo preview")).toBeNull();
   });
 
-  it("keeps the existing avatar when upload is unavailable", async () => {
+  it("keeps the existing avatar when upload fails", async () => {
     selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512 });
+    jest.spyOn(profilePhotoApi, "save").mockRejectedValue(new Error("Upload failed."));
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
-    await fireEvent.press(screen.getByText("Take photo"));
+    await fireEvent.press(screen.getByText("Upload new photo"));
     await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
     await fireEvent.press(screen.getByText("Replace photo"));
-    expect(screen.getByText(/Photo upload is unavailable/)).toBeOnTheScreen();
-    expect(screen.getByText("Replace photo")).toBeOnTheScreen();
-    expect(screen.queryByText("Retry upload")).toBeNull();
+    expect(screen.getByText("Upload failed.")).toBeOnTheScreen();
+    expect(screen.getByText("Retry upload")).toBeOnTheScreen();
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
   });
 
@@ -88,7 +106,7 @@ describe("Profile", () => {
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
     fireEvent.press(screen.getByText("Choose from gallery"));
     await waitFor(() => expect(screen.getByLabelText("Preparing photo")).toBeOnTheScreen());
-    expect(screen.getByText("Take photo").parent).toBeDisabled();
+    expect(screen.getByText("Choose from gallery").parent).toBeDisabled();
     finish(null);
     await waitFor(() => expect(screen.queryByLabelText("Preparing photo")).toBeNull());
   });
@@ -103,7 +121,7 @@ describe("Profile", () => {
     });
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
-    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await fireEvent.press(screen.getByText("Upload new photo"));
     await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
     fireEvent.press(screen.getByText("Replace photo"));
     await waitFor(() => expect(screen.getByText("Uploading photo: 50%")).toBeOnTheScreen());
@@ -144,7 +162,7 @@ describe("Profile", () => {
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
     expect(screen.getByText("Replace profile photo")).toBeOnTheScreen();
-    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await fireEvent.press(screen.getByText("Upload new photo"));
     await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
     await fireEvent.press(screen.getByText("Replace photo"));
     await waitFor(() => expect(screen.getByText("Retry upload")).toBeOnTheScreen());
@@ -164,7 +182,7 @@ describe("Profile", () => {
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
     await fireEvent.press(screen.getByText("Choose from gallery"));
     await waitFor(() => expect(screen.getByLabelText("Cropped photo preview")).toHaveProp("source", { uri: draft.uri }));
-    await fireEvent.press(screen.getByText("Take photo"));
+    await fireEvent.press(screen.getByText("Choose another photo"));
     expect(screen.getByLabelText("Cropped photo preview")).toHaveProp("source", { uri: draft.uri });
   });
 
@@ -173,7 +191,7 @@ describe("Profile", () => {
     jest.spyOn(profilePhotoApi, "save").mockResolvedValue({ id: "another-user", avatarUrl: "https://example.com/wrong.jpg" });
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
-    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await fireEvent.press(screen.getByText("Upload new photo"));
     await waitFor(() => expect(screen.getByText("Replace photo")).toBeOnTheScreen());
     await fireEvent.press(screen.getByText("Replace photo"));
     await waitFor(() => expect(screen.getByText("The updated profile photo was not returned.")).toBeOnTheScreen());
@@ -184,12 +202,12 @@ describe("Profile", () => {
     const remove = jest.spyOn(profilePhotoApi, "remove").mockResolvedValue({ id: "me-1", avatarUrl: null });
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
-    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Delete photo"));
     expect(screen.getByText("Remove your current profile photo?")).toBeOnTheScreen();
     await fireEvent.press(screen.getByText("Keep photo"));
     expect(remove).not.toHaveBeenCalled();
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
-    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Delete photo"));
     await fireEvent.press(screen.getByText("Confirm removal"));
     await waitFor(() => expect(store.get(userState).avatarUrl).toBeNull());
     expect(remove).toHaveBeenCalledWith("me-1");
@@ -199,7 +217,7 @@ describe("Profile", () => {
     jest.spyOn(profilePhotoApi, "remove").mockRejectedValue(new Error("Removal unavailable."));
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
-    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Delete photo"));
     await fireEvent.press(screen.getByText("Confirm removal"));
     await waitFor(() => expect(screen.getByText("Removal unavailable.")).toBeOnTheScreen());
     expect(screen.getByText("Confirm removal")).toBeOnTheScreen();
@@ -210,7 +228,7 @@ describe("Profile", () => {
     jest.spyOn(profilePhotoApi, "remove").mockResolvedValue({ id: "another-user", avatarUrl: null });
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/old.jpg" });
     await fireEvent.press(screen.getByLabelText("Edit profile photo"));
-    await fireEvent.press(screen.getByText("Remove photo"));
+    await fireEvent.press(screen.getByText("Delete photo"));
     await fireEvent.press(screen.getByText("Confirm removal"));
     await waitFor(() => expect(screen.getByText("Photo removal was not confirmed.")).toBeOnTheScreen());
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
