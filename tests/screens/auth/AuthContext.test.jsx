@@ -10,6 +10,7 @@ import { profilePhotoApi } from "../../../app/profilePhoto/api";
 
 const mockAuthListener = jest.fn();
 const mockUnsubscribe = jest.fn();
+const signedInUser = { uid: "u-1", email: "casey@example.com", getIdToken: jest.fn().mockResolvedValue("token-1") };
 
 jest.mock("../../../FirebaseConfig", () => ({
   Auth: {
@@ -20,6 +21,7 @@ jest.mock("../../../FirebaseConfig", () => ({
   },
 }));
 jest.mock("axios", () => ({ __esModule: true, default: { get: jest.fn() } }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("../../../app/profilePhoto/api", () => ({ profilePhotoApi: { getProfile: jest.fn() } }));
 
 function AuthProbe() {
@@ -37,6 +39,7 @@ function AuthProbe() {
 
 beforeEach(() => {
   jest.resetAllMocks();
+  signedInUser.getIdToken.mockResolvedValue("token-1");
   profilePhotoApi.getProfile.mockResolvedValue({ avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null });
 });
 
@@ -69,11 +72,7 @@ describe("AuthProvider", () => {
     try {
       await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
       await act(async () => {
-        mockAuthListener.mock.calls[0][0]({
-          uid: "u-1",
-          email: "casey@example.com",
-          getIdToken: jest.fn().mockResolvedValue("id-token"),
-        });
+        mockAuthListener.mock.calls[0][0](signedInUser);
       });
 
       expect(screen.getByText("casey@example.com")).toBeOnTheScreen();
@@ -94,18 +93,13 @@ describe("AuthProvider", () => {
     const onAuthChange = mockAuthListener.mock.calls[0][0];
 
     await act(async () => {
-      onAuthChange({
-        uid: "user-1",
-        email: "casey@example.com",
-        getIdToken: jest.fn().mockResolvedValue("id-token"),
-      });
+      onAuthChange(signedInUser);
     });
 
     expect(screen.getByText("casey@example.com")).toBeOnTheScreen();
-    expect(axios.get).toHaveBeenCalledWith(
-      expect.stringMatching(/\/user\/casey@example\.com$/),
-      { headers: { Authorization: "Bearer id-token" } }
-    );
+    expect(axios.get).toHaveBeenCalledWith(expect.stringMatching(/\/user\/casey%40example\.com$/), {
+      headers: { Authorization: "Bearer token-1" },
+    });
     expect(screen.getByText("Casey User")).toBeOnTheScreen();
 
     await act(async () => {
@@ -119,7 +113,7 @@ describe("AuthProvider", () => {
     profilePhotoApi.getProfile.mockResolvedValue({ avatarUrl: "https://example.com/avatar.jpg", avatarMediaId: "media-1", avatarExpiresAt: new Date(Date.now() + 300000).toISOString() });
     await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
     await act(async () => {
-      mockAuthListener.mock.calls[0][0]({ uid: "u-1", email: "casey@example.com" });
+      mockAuthListener.mock.calls[0][0](signedInUser);
     });
     expect(screen.getByText("https://example.com/avatar.jpg")).toBeOnTheScreen();
   });
@@ -129,7 +123,7 @@ describe("AuthProvider", () => {
     axios.get.mockReturnValue(new Promise((resolve) => { resolveProfile = resolve; }));
     await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
     const onAuthChange = mockAuthListener.mock.calls[0][0];
-    await act(async () => { onAuthChange({ uid: "u-1", email: "casey@example.com" }); });
+    await act(async () => { onAuthChange(signedInUser); });
     await act(async () => { onAuthChange(null); });
     await act(async () => { resolveProfile({ data: { name: "Old User", avatarUrl: "https://example.com/old.jpg" } }); });
     expect(screen.getByText("signed out")).toBeOnTheScreen();

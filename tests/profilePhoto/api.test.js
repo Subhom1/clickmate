@@ -1,8 +1,8 @@
-import { profilePhotoApi, ProfilePhotoApiError, createPresignedProfilePhotoApi, createMultipartProfilePhotoApi } from "../../app/profilePhoto/api";
+import { profilePhotoApi, ProfilePhotoApiError, ProfilePhotoApiUnavailableError, createPresignedProfilePhotoApi, createMultipartProfilePhotoApi } from "../../app/profilePhoto/api";
 import { createMockProfilePhotoApi } from "../mocks/profilePhotoApi";
 
 jest.mock("../../FirebaseConfig", () => ({ Auth: { currentUser: null } }));
-jest.mock("../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../constant", () => ({ IP: "localhost", API_BASE_URL: "http://localhost:5051" }));
 
 it("requires authentication for production upload and removal", async () => {
   await expect(profilePhotoApi.save("me-1", { uri: "file://avatar.jpg", width: 512, height: 512, mimeType: "image/jpeg" }))
@@ -119,4 +119,12 @@ it("rejects expired sessions and invalid confirmation without changing profile s
   request.mockReset().mockResolvedValueOnce({ data: { mediaId: "media-1", method: "POST", uploadUrl: "https://storage.example/upload", fields: {}, expiresAt: new Date(Date.now() + 300000).toISOString() } })
     .mockResolvedValueOnce({ data: { success: true, avatar: { mediaId: "media-1", url: "http://unsafe.example/read", expiresAt: new Date(Date.now() + 300000).toISOString() } } });
   await expect(api.save("me-1", photo)).rejects.toThrow("updated profile photo was not returned");
+});
+
+it("reports an unavailable backend session without uploading the file", async () => {
+  const request = jest.fn().mockRejectedValue({ response: { status: 503, data: { message: "Upload session unavailable" } } });
+  const api = createMultipartProfilePhotoApi({ request, getToken: async () => "token", baseUrl: "http://localhost:5051", FileClass: FakeFile });
+  await expect(api.save("me-1", photo)).rejects.toThrow("Upload session unavailable");
+  await expect(api.save("me-1", photo)).rejects.toBeInstanceOf(ProfilePhotoApiUnavailableError);
+  expect(upload).not.toHaveBeenCalled();
 });

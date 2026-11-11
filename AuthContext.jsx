@@ -5,7 +5,7 @@ import { Auth } from "./FirebaseConfig";
 import { useSetAtom } from "jotai";
 import axios from "axios";
 import { userState } from "./app/state/atoms/UserState";
-import { IP } from "./constant";
+import { API_BASE_URL } from "./constant";
 import { profilePhotoApi } from "./app/profilePhoto/api";
 
 const AuthContext = createContext();
@@ -24,7 +24,8 @@ const AuthProvider = ({ children }) => {
         const getUserInfo = async () => {
           try {
             const token = await user.getIdToken();
-            const res = await axios.get(`http://${IP}:5051/user/${user.email}`, {
+            if (!API_BASE_URL) throw new Error("A secure ClickMate API URL is required.");
+            const res = await axios.get(`${API_BASE_URL}/user/${encodeURIComponent(user.email)}`, {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (currentRequest === requestId) setUserMongoData(res.data);

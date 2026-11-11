@@ -1,7 +1,7 @@
 import { File, UploadType } from "expo-file-system";
 import axios from "axios";
 import { Auth } from "../../FirebaseConfig";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 
 /**
  * @typedef {{uri: string, width: number, height: number, mimeType: 'image/jpeg'}} ProcessedProfilePhoto
@@ -20,8 +20,8 @@ export class ProfilePhotoApiError extends Error {
 }
 
 export class ProfilePhotoApiUnavailableError extends Error {
-  constructor() {
-    super("Photo upload is unavailable until the profile photo API is connected.");
+  constructor(message = "Photo upload is unavailable until the profile photo API is connected.") {
+    super(message);
     this.name = "ProfilePhotoApiUnavailableError";
   }
 }
@@ -102,8 +102,16 @@ export function createMultipartProfilePhotoApi({ request, getToken, baseUrl, Fil
     }
     const token = await getToken();
     if (!token) throw new ProfilePhotoApiError("Please sign in to manage your photo.");
-    const response = await request({ method, url: `${baseUrl}${path}`, data, headers: { Authorization: `Bearer ${token}` } });
-    return response.data;
+    try {
+      const response = await request({ method, url: `${baseUrl}${path}`, data, headers: { Authorization: `Bearer ${token}` } });
+      return response.data;
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      if (error?.response?.status === 503) {
+        throw new ProfilePhotoApiUnavailableError(message || "Photo service is temporarily unavailable.");
+      }
+      throw new ProfilePhotoApiError(message || (error?.response ? "The photo request failed. Please try again." : "Could not reach the photo service. Check your connection."));
+    }
   };
   const parseAvatar = (avatar) => {
     if (!avatar || typeof avatar.mediaId !== "string" || !avatar.mediaId ||
@@ -162,5 +170,5 @@ export function createMultipartProfilePhotoApi({ request, getToken, baseUrl, Fil
 export const profilePhotoApi = createMultipartProfilePhotoApi({
   request: axios,
   getToken: () => Auth.currentUser?.getIdToken(),
-  baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || (__DEV__ ? `http://${IP}:5051` : ""),
+  baseUrl: API_BASE_URL,
 });

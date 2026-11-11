@@ -19,11 +19,11 @@ import { signOut } from "firebase/auth";
 import axios from "axios";
 import { useAtom, useSetAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
-import { IP } from "../../constant";
+import { IP, API_BASE_URL } from "../../constant";
 import Icon from "@expo/vector-icons/Feather";
 import { InitialsCircle } from "../components/CreateAvatar";
 import { selectProfilePhoto } from "../profilePhoto/selectPhoto";
-import { profilePhotoApi } from "../profilePhoto/api";
+import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../profilePhoto/api";
 
 export default function Profile({ route }) {
   const [userData, setUserData] = useAtom(userState);
@@ -34,6 +34,8 @@ export default function Profile({ route }) {
   const [interests, setAllInterests] = useState([]);
   const [userInterestsIDs, setUserInterestsIDs] = useState([]);
   const [nameError, setNameError] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [photoDraft, setPhotoDraft] = useState(null);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -87,7 +89,7 @@ export default function Profile({ route }) {
     } catch (error) {
       setPhotoError(error?.message || "The photo could not be saved.");
       setPhotoProgress(null);
-      setPhotoCanRetry(true);
+      setPhotoCanRetry(!(error instanceof ProfilePhotoApiUnavailableError));
     } finally {
       setPhotoBusy(false);
     }
@@ -172,12 +174,16 @@ export default function Profile({ route }) {
     }
   };
   const getAllInterests = async () => {
-    await axios
-      .get(`http://${IP}:5051/interests`)
-      .then((res) => setAllInterests(res.data))
-      .catch((e) => console.error(e, "Error fetching interests"));
+    try {
+      if (!API_BASE_URL) throw new Error("A secure ClickMate API URL is required.");
+      const res = await axios.get(`${API_BASE_URL}/interests`);
+      setAllInterests(res.data);
+    } catch (e) {
+      console.error(e, "Error fetching interests");
+    }
   };
   const updateUserData = async () => {
+    if (profileSaving) return;
     if (!fullname) {
       setNameError(true);
       return;
@@ -187,13 +193,28 @@ export default function Profile({ route }) {
       bio,
       interests: userInterestsIDs,
     };
-    await axios
-      .patch(`http://${IP}:5051/user/${userData?._id}`, newUserData)
-      .then((res) => {
-        setUserStateData(res.data);
-        setEditMode((editMode) => !editMode);
-      })
-      .catch((e) => console.error(e, "Error updating user data"));
+    setProfileSaving(true);
+    setProfileError("");
+    try {
+      if (!userData?._id) throw new Error("Your profile is still loading. Please try again.");
+      const token = await Auth.currentUser?.getIdToken();
+      if (!token) throw new Error("Please sign in again to update your profile.");
+      if (!API_BASE_URL) throw new Error("A secure ClickMate API URL is required.");
+      const res = await axios.patch(`${API_BASE_URL}/user/${userData?._id}`, newUserData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserStateData((current) => ({
+        ...current,
+        ...res.data,
+        ...(current?.avatarUrl ? { avatarUrl: current.avatarUrl, avatarExpiresAt: current.avatarExpiresAt } : {}),
+      }));
+      setEditMode(false);
+    } catch (e) {
+      setProfileError(e?.response?.data?.message || e?.message || "Could not update profile. Please try again.");
+      console.error(e, "Error updating user data");
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const { platform } = route.params;
@@ -226,18 +247,21 @@ export default function Profile({ route }) {
           {editMode ? (
             <>
               <Pressable
+                disabled={profileSaving}
                 onPress={() => {
                   updateUserData();
                 }}
                 className="flex-row items-center"
               >
                 <Icon name="check" size={20} />
-                <Text className="ml-1">Update</Text>
+                <Text className="ml-1">{profileSaving ? "Saving..." : "Update"}</Text>
               </Pressable>
               <Pressable
+                disabled={profileSaving}
                 onPress={() => {
                   setEditMode(false);
                   setNameError(false);
+                  setProfileError("");
                 }}
                 className="flex-row items-center"
               >
@@ -250,6 +274,7 @@ export default function Profile({ route }) {
                 className="mr-3"
                 onPress={() => {
                   setEditMode((editMode) => !editMode);
+                  setProfileError("");
                 }}
               >
                 <Icon name="edit" size={20} />
@@ -263,6 +288,7 @@ export default function Profile({ route }) {
             </Pressable>
           )}
         </View>
+        {profileError ? <Text accessibilityRole="alert" style={styles.textError}>{profileError}</Text> : null}
         <View className="mt-5">
           {!editMode ? (
             <Text className="text-2xl font-medium capitalize">

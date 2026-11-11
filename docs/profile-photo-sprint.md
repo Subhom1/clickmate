@@ -12,7 +12,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | 3 | Add upload progress, retries, and replacement flow | Complete as frontend flow; backend and editor simulator checks remain blocked |
 | 4 | Add removal flow and persistence refresh | Complete as frontend flow; backend persistence unverified |
 | 5 | Propagate avatars across relevant screens | Complete for supplied avatar URLs; backend mapping and expiry refresh pending |
-| 6 | Platform and end-to-end validation, accessibility, error recovery | Pending |
+| 6 | Platform and end-to-end validation, accessibility, error recovery | In progress: frontend validation complete; live storage and photo picker acceptance blocked |
 | 7 | Full regression, cleanup, acceptance report | Pending |
 
 ## Day 1 findings
@@ -132,6 +132,16 @@ completion and profile retrieval return an avatar object with a five-minute
 private read URL. The client retains the media ID and refreshes that URL. Live
 storage/database integration, staging configuration, and device acceptance
 still need verification.
+
+## Day 6 continuation (11 November)
+
+- Used the booted iPhone 18 Pro with the logged-in account. The feature build loaded the authenticated profile and showed the left-aligned round camera-plus control. The photo sheet opened. The supplied `person7.jpg` was added to the simulator library. iOS displayed its limited photo-access chooser, but the connected UI controller stopped accepting clicks inside the system picker; crop, preview, upload, replacement, deletion, and persistence were not completed on device. Screenshot: `/private/tmp/clickmate-day6-iphone.png` (Home screen after reload), plus visual inspection of the profile and permission dialog during the run. Android ADB had no connected device.
+- Diagnosed the recurring Axios failure in two stages. A stale Expo server used `http://undefined:5051`; launching a separate feature server with the current LAN IP reached the backend. The backend then returned HTTP 401 because its current `GET /user/:email` and `PATCH /user/:userId` require Firebase bearer authentication. The frontend now sends the current ID token for these requests and for authenticated registration. The iPhone profile loaded after the fix.
+- Added a development API-host fallback from Expo's Metro host and a shared API origin for the newly authenticated calls. Production requires a configured HTTPS `EXPO_PUBLIC_API_BASE_URL`; local HTTP is limited to development. Profile edits show a visible error and saving state and preserve the confirmed avatar URL.
+- The multipart adapter now reports backend 503 messages as an unavailable service; the photo sheet keeps the cropped draft without suggesting an immediate retry. This was verified with isolated negative tests, not a live upload.
+- The running backend responds successfully to `/health` and has a MongoDB connection, but its process environment and local `.env` lack `MEDIA_S3_BUCKET` and `MEDIA_S3_REGION`. `createS3Storage` requires both before the upload-session route can succeed. No storage configuration or backend code was changed. Live upload, restart persistence, replacement, deletion, and shared remote-avatar acceptance remain blocked.
+- Merged current frontend `main` (commit `63de92b`), which independently introduced Metro host discovery and bearer-token profile loading. Reconciled its tests and retained its preference for the current Metro host over a stale configured IP. The resulting branch passes 25 Jest suites / 144 tests; iOS and Android JavaScript exports both succeeded after the merge. `npm run lint --if-present` and `npm run typecheck --if-present` perform no work because the repository has no such scripts. Existing draft frontend PR #9 remains unmerged pending live acceptance.
+- Official SDK 58 environment guidance: https://docs.expo.dev/guides/environment-variables/ . Expo's `expo-constants` `expoConfig.hostUri` is documented at https://docs.expo.dev/versions/v58.0.0/sdk/constants/ .
 
 ## References
 

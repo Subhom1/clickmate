@@ -7,12 +7,12 @@ import { Auth } from "../../../FirebaseConfig";
 import Profile from "../../../app/screens/Profile";
 import { userState } from "../../../app/state/atoms/UserState";
 import { selectProfilePhoto } from "../../../app/profilePhoto/selectPhoto";
-import { profilePhotoApi } from "../../../app/profilePhoto/api";
+import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../../../app/profilePhoto/api";
 
 jest.mock("firebase/auth", () => ({ signOut: jest.fn() }));
 jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: null } }));
 jest.mock("axios", () => ({ get: jest.fn(), patch: jest.fn(), delete: jest.fn() }));
-jest.mock("../../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../../constant", () => ({ IP: "localhost", API_BASE_URL: "http://localhost:5051" }));
 jest.mock("../../../app/profilePhoto/selectPhoto", () => ({ selectProfilePhoto: jest.fn() }));
 jest.mock("@expo/vector-icons/Feather", () => {
   const React = require("react");
@@ -22,7 +22,7 @@ jest.mock("@expo/vector-icons/Feather", () => {
 
 beforeEach(() => {
   jest.resetAllMocks();
-  Auth.currentUser = null;
+  Auth.currentUser = { getIdToken: jest.fn().mockResolvedValue("token-1") };
   jest.spyOn(console, "error").mockImplementation(() => {});
   signOut.mockResolvedValue(undefined);
   jest.spyOn(console, "log").mockImplementation(() => {});
@@ -88,6 +88,19 @@ describe("Profile", () => {
     expect(screen.getByText("Upload failed.")).toBeOnTheScreen();
     expect(screen.getByText("Retry upload")).toBeOnTheScreen();
     expect(store.get(userState).avatarUrl).toBe("https://example.com/old.jpg");
+  });
+
+  it("keeps the draft but does not offer retry for an unavailable photo service", async () => {
+    selectProfilePhoto.mockResolvedValue({ uri: "file://cropped.jpg", width: 512, height: 512, mimeType: "image/jpeg" });
+    jest.spyOn(profilePhotoApi, "save").mockRejectedValue(new ProfilePhotoApiUnavailableError("Upload session unavailable"));
+    await renderProfile();
+    await fireEvent.press(screen.getByLabelText("Edit profile photo"));
+    await fireEvent.press(screen.getByText("Choose from gallery"));
+    await waitFor(() => expect(screen.getByText("Save photo")).toBeOnTheScreen());
+    await fireEvent.press(screen.getByText("Save photo"));
+    await waitFor(() => expect(screen.getByText("Upload session unavailable")).toBeOnTheScreen());
+    expect(screen.queryByText("Retry upload")).toBeNull();
+    expect(screen.getByLabelText("Cropped photo preview")).toBeOnTheScreen();
   });
 
   it("shows a picker error without replacing profile data", async () => {
@@ -292,15 +305,34 @@ describe("Profile", () => {
         fullname: "Casey New",
         bio: "Trail runner",
         interests: ["i-2"],
-      })
+      }, { headers: { Authorization: "Bearer token-1" } })
     );
     expect(store.get(userState)).toEqual(updatedUser);
     expect(screen.getByText("Casey New")).toBeOnTheScreen();
+  });
+
+  it("keeps the confirmed avatar when profile details are updated", async () => {
+    axios.patch.mockResolvedValue({ data: { ...initialUser, fullname: "Casey New" } });
+    const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/avatar.jpg", avatarExpiresAt: "2030-01-01T00:00:00.000Z" });
+    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), "Casey New");
+    await fireEvent.press(screen.getByText("Update"));
+    await waitFor(() => expect(screen.getByText("Casey New")).toBeOnTheScreen());
+    expect(store.get(userState).avatarUrl).toBe("https://example.com/avatar.jpg");
   });
 });
 
 
 describe("Profile failure recovery", () => {
+  it("asks the user to sign in if the edit token is unavailable", async () => {
+    Auth.currentUser = null;
+    await renderProfile();
+    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByText("Update"));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Please sign in again to update your profile."));
+    expect(axios.patch).not.toHaveBeenCalled();
+  });
+
   it("keeps the current session when sign out fails", async () => {
     const error = new Error("Sign out unavailable");
     signOut.mockRejectedValueOnce(error);
@@ -322,6 +354,7 @@ describe("Profile failure recovery", () => {
     await fireEvent.press(screen.getByText("Update"));
 
     await waitFor(() => expect(console.error).toHaveBeenCalledWith(error, "Error updating user data"));
+    expect(screen.getByRole("alert")).toHaveTextContent("Update unavailable");
     expect(store.get(userState)).toEqual(initialUser);
     expect(screen.getByPlaceholderText("Enter your full name")).toHaveDisplayValue("Casey New");
     await fireEvent.press(screen.getByText("Update"));
@@ -330,7 +363,7 @@ describe("Profile failure recovery", () => {
     expect(axios.patch).toHaveBeenCalledTimes(2);
     expect(axios.patch).toHaveBeenLastCalledWith("http://localhost:5051/user/me-1", {
       fullname: "Casey New", bio: initialUser.bio, interests: ["i-1"],
-    });
+    }, { headers: { Authorization: "Bearer token-1" } });
     expect(store.get(userState)).toEqual(updatedUser);
     expect(screen.queryByPlaceholderText("Enter your full name")).toBeNull();
   });
