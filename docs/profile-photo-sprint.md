@@ -13,7 +13,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | 4 | Add removal flow and persistence refresh | Complete as frontend flow; backend persistence unverified |
 | 5 | Propagate avatars across relevant screens | Complete for supplied avatar URLs; backend mapping and expiry refresh pending |
 | 6 | Platform and end-to-end validation, accessibility, error recovery | In progress: frontend validation complete; live storage and photo picker acceptance blocked |
-| 7 | Full regression, cleanup, acceptance report | In progress: MongoDB implementation tested; live iPhone upload and restart acceptance pending |
+| 7 | Full regression, cleanup, acceptance report | Scheduled run complete; live iPhone upload and restart acceptance blocked on picker selection |
 
 ## Day 1 findings
 
@@ -165,6 +165,9 @@ frontend path. Live upload and deployment remain unverified.
   passed CI. Official references:
   [MongoDB GridFS threshold](https://www.mongodb.com/docs/manual/core/gridfs/),
   [Expo SDK 58 FileSystem](https://docs.expo.dev/versions/v58.0.0/sdk/filesystem/).
+- The seven scheduled runs are over and the recurring automation was disabled.
+  The feature remains in draft PRs until on-device upload, replacement,
+  deletion, and restart checks are completed.
 
 ## References
 
