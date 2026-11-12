@@ -115,23 +115,15 @@ frontend regression sprint in `tests/SPRINT.md`.
 - Avatar metadata includes the durable media ID and a short-lived read URL. Authentication refreshes it on sign-in, and the profile refreshes near expiry and when foregrounded. Neither URL nor credentials are committed as durable storage.
 - Deterministic frontend tests cover the multipart request, signed fields, unsafe session, invalid confirmation, and UI states. All 25 suites / 136 tests pass. The updated app launched on the booted iPhone simulator, but the user-details request failed because the local backend was not listening on port 5051; the authenticated profile and live upload were not visually verified. Screenshot: `/private/tmp/clickmate-profile-new-iphone.png`. Live S3/MongoDB remain unverified.
 
-## Backend contract needed
+## Backend contract
 
-The backend must specify authenticated endpoints and response fields for:
-
-1. Creating a profile photo upload session (user ID, MIME type, file size),
-   returning an HTTPS upload URL, required headers, and storage reference.
-2. Confirming the uploaded image and returning updated profile metadata with a
-   durable avatar URL or storage reference.
-3. Removing the current photo and returning updated profile metadata.
-4. Fetching profiles and friend data with avatar metadata after app restart.
-
-The backend main branch documents authenticated avatar routes and the frontend
-now calls them. The upload session returns a multipart POST URL and fields;
-completion and profile retrieval return an avatar object with a five-minute
-private read URL. The client retains the media ID and refreshes that URL. Live
-storage/database integration, staging configuration, and device acceptance
-still need verification.
+The frontend feature branch uses authenticated `POST /v1/me/avatar-file`,
+`GET /v1/me/avatar-file`, `GET /v1/avatar-files/:mediaId`, and
+`DELETE /v1/me/avatar-file` from backend draft PR #22. The backend stores
+validated JPEG bytes in MongoDB and returns durable media IDs. The frontend
+constructs an API-origin image URL and attaches a Firebase ID token. The older
+S3 multipart adapter is retained for compatibility but is not the active
+frontend path. Live upload and deployment remain unverified.
 
 ## Day 6 continuation (11 November)
 
@@ -156,7 +148,7 @@ still need verification.
   token on image requests, and resolves friends' `avatarFileId` in shared
   avatars. The prior S3 adapter remains for compatibility but is not the
   production frontend path on this branch.
-- Backend unit and syntax checks passed (168 tests). Frontend Jest passed
+- Backend unit and syntax checks passed (169 tests). Frontend Jest passed
   25 suites / 149 tests. iOS, Android, and web JavaScript exports passed. No
   lint or TypeScript check scripts are configured in the frontend repository.
 - The feature Expo app launched on the logged-in iPhone 18 Pro, loaded the
@@ -168,7 +160,9 @@ still need verification.
   could not start in this environment. Do not merge or claim production
   readiness until the live flow and backend deployment are verified.
 - Backend API details: `clickmate-backend/docs/mongodb-avatar-storage.md` on
-  the companion feature branch. Official references:
+  [backend draft PR #22](https://github.com/Subhom1/clickmate-backend/pull/22).
+  Both backend and [frontend draft PR #9](https://github.com/Subhom1/clickmate/pull/9)
+  passed CI. Official references:
   [MongoDB GridFS threshold](https://www.mongodb.com/docs/manual/core/gridfs/),
   [Expo SDK 58 FileSystem](https://docs.expo.dev/versions/v58.0.0/sdk/filesystem/).
 
