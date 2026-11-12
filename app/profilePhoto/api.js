@@ -12,6 +12,16 @@ import { API_BASE_URL } from "../../constant";
 
 const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
 
+// Expo's native progress counters can be bigint on iOS. Convert the small
+// avatar byte counts before doing floating-point progress arithmetic.
+const uploadFraction = ({ bytesSent, totalBytes }) => {
+  const sent = Number(bytesSent);
+  const total = Number(totalBytes);
+  return Number.isFinite(sent) && Number.isFinite(total) && total > 0
+    ? Math.max(0, Math.min(1, sent / total))
+    : null;
+};
+
 export class ProfilePhotoApiError extends Error {
   constructor(message) {
     super(message);
@@ -61,11 +71,9 @@ export function createPresignedProfilePhotoApi({ createSession, confirm, remove,
         mimeType: photo.mimeType,
         headers: session.headers,
         sessionType: "foreground",
-        onProgress: ({ bytesSent, totalBytes }) => {
-          if (totalBytes > 0) {
-            const fraction = Math.max(0, Math.min(1, bytesSent / totalBytes));
-            onProgress?.(0.1 + fraction * 0.8);
-          }
+        onProgress: (progress) => {
+          const fraction = uploadFraction(progress);
+          if (fraction !== null) onProgress?.(0.1 + fraction * 0.8);
         },
       });
       if (response.status < 200 || response.status >= 300) {
@@ -142,8 +150,9 @@ export function createMultipartProfilePhotoApi({ request, getToken, baseUrl, Fil
       const uploaded = await file.upload(session.uploadUrl, {
         httpMethod: "POST", uploadType: UploadType.MULTIPART, fieldName: "file", mimeType: photo.mimeType,
         parameters: session.fields, sessionType: "foreground",
-        onProgress: ({ bytesSent, totalBytes }) => {
-          if (totalBytes > 0) onProgress?.(0.1 + Math.max(0, Math.min(1, bytesSent / totalBytes)) * 0.8);
+        onProgress: (progress) => {
+          const fraction = uploadFraction(progress);
+          if (fraction !== null) onProgress?.(0.1 + fraction * 0.8);
         },
       });
       if (uploaded.status < 200 || uploaded.status >= 300) throw new ProfilePhotoApiError("The photo transfer failed. Please try again.");
@@ -208,8 +217,9 @@ export function createMongoProfilePhotoApi({ request, getToken, baseUrl, FileCla
       onProgress?.(0);
       const response = await file.upload(`${baseUrl}/v1/me/avatar-file`, {
         httpMethod: "POST", uploadType: UploadType.MULTIPART, fieldName: "file", mimeType: "image/jpeg", headers,
-        sessionType: "foreground", onProgress: ({ bytesSent, totalBytes }) => {
-          if (totalBytes > 0) onProgress?.(Math.max(0, Math.min(0.9, bytesSent / totalBytes * 0.9)));
+        sessionType: "foreground", onProgress: (progress) => {
+          const fraction = uploadFraction(progress);
+          if (fraction !== null) onProgress?.(fraction * 0.9);
         },
       });
       if (response.status < 200 || response.status >= 300) {

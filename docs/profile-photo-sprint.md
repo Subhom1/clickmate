@@ -13,7 +13,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | 4 | Add removal flow and persistence refresh | Complete as frontend flow; backend persistence unverified |
 | 5 | Propagate avatars across relevant screens | Complete for supplied avatar URLs; backend mapping and expiry refresh pending |
 | 6 | Platform and end-to-end validation, accessibility, error recovery | In progress: frontend validation complete; live storage and photo picker acceptance blocked |
-| 7 | Full regression, cleanup, acceptance report | Scheduled run complete; live iPhone upload and restart acceptance blocked on picker selection |
+| 7 | Full regression, cleanup, acceptance report | Scheduled run complete; upload and restart verified after user picker handoff; replacement progress fix needs device retest |
 
 ## Day 1 findings
 
@@ -166,8 +166,29 @@ frontend path. Live upload and deployment remain unverified.
   [MongoDB GridFS threshold](https://www.mongodb.com/docs/manual/core/gridfs/),
   [Expo SDK 58 FileSystem](https://docs.expo.dev/versions/v58.0.0/sdk/filesystem/).
 - The seven scheduled runs are over and the recurring automation was disabled.
-  The feature remains in draft PRs until on-device upload, replacement,
-  deletion, and restart checks are completed.
+  The feature remains in draft PRs until remaining on-device checks are completed.
+
+## Day 7 user-assisted iPhone acceptance
+
+- The user selected `person7.jpg` in Apple's picker and saved it. The iPhone
+  displayed the actual portrait in the profile circle and tab avatar. A
+  read-only MongoDB check found one referenced `avatar_files` document: a
+  512×512 JPEG of 38,969 bytes. The isolated backend on port 5052 returned
+  HTTP 401 for unauthenticated image reads and uploads.
+- Expo Go was terminated and reopened. After Firebase restored the session,
+  the same portrait reappeared in the tab and profile, verifying backend
+  persistence after app restart. Tapping it showed `Upload new photo` and
+  `Delete photo`; `Keep photo` cancelled deletion and preserved the image.
+- During a user-assisted replacement, Expo's native upload progress counters
+  arrived as BigInt values. Mixed BigInt and number arithmetic caused a red
+  screen. MongoDB nevertheless contained one newly saved, referenced image;
+  the earlier bytes had been removed. The frontend now converts finite small
+  byte counts before computing progress. Focused BigInt tests, the full
+  25-suite / 150-test frontend run, and iOS/Android exports passed. Native
+  progress after this fix still requires a fresh replacement test.
+- Screenshot: `/private/tmp/clickmate-day7-avatar-persisted.png`. Live deletion
+  and Android simulator behavior remain unverified; the user's saved test
+  portrait is retained. Keep both PRs in draft pending these checks.
 
 ## References
 

@@ -129,6 +129,20 @@ it("reports an unavailable backend session without uploading the file", async ()
   expect(upload).not.toHaveBeenCalled();
 });
 
+it("normalizes bigint upload counters in the legacy multipart adapter", async () => {
+  const future = new Date(Date.now() + 300000).toISOString();
+  const request = jest.fn()
+    .mockResolvedValueOnce({ data: { mediaId: "media-1", method: "POST", uploadUrl: "https://storage.example/upload", fields: {}, expiresAt: future } })
+    .mockResolvedValueOnce({ data: { success: true, avatar: { mediaId: "media-1", url: "https://storage.example/read", expiresAt: future } } });
+  upload.mockImplementation(async (_url, options) => {
+    options.onProgress({ bytesSent: 1n, totalBytes: 2n });
+    return { status: 204 };
+  });
+  const progress = jest.fn();
+  await createMultipartProfilePhotoApi({ request, getToken: async () => "token", baseUrl: "http://localhost:5051", FileClass: FakeFile }).save("me-1", photo, progress);
+  expect(progress.mock.calls.map(([value]) => value)).toEqual([0, 0.1, 0.5, 0.9, 1]);
+});
+
 const mongoAvatar = { mediaId: "507f1f77bcf86cd799439011", contentType: "image/jpeg", width: 512, height: 512 };
 const mongoUrl = `http://localhost:5051/v1/avatar-files/${mongoAvatar.mediaId}`;
 const mongoApi = request => createMongoProfilePhotoApi({ request, getToken: async () => "token", baseUrl: "http://localhost:5051", FileClass: FakeFile });
@@ -136,7 +150,8 @@ const mongoApi = request => createMongoProfilePhotoApi({ request, getToken: asyn
 it("uploads the cropped JPEG with authentication and maps MongoDB metadata", async () => {
   const request = jest.fn().mockResolvedValue({ data: { avatar: mongoAvatar } });
   upload.mockImplementation(async (_url, options) => {
-    options.onProgress({ bytesSent: 500, totalBytes: 1000 });
+    options.onProgress({ bytesSent: 500n, totalBytes: 1000n });
+    options.onProgress({ bytesSent: 2000n, totalBytes: 1000n });
     return { status: 201, body: JSON.stringify({ avatar: mongoAvatar }) };
   });
   const progress = jest.fn();
@@ -146,7 +161,7 @@ it("uploads the cropped JPEG with authentication and maps MongoDB metadata", asy
   expect(upload).toHaveBeenCalledWith("http://localhost:5051/v1/me/avatar-file", expect.objectContaining({
     httpMethod: "POST", fieldName: "file", headers: { Authorization: "Bearer token" },
   }));
-  expect(progress.mock.calls.map(([fraction]) => fraction)).toEqual([0, 0.45, 0.9, 1]);
+  expect(progress.mock.calls.map(([fraction]) => fraction)).toEqual([0, 0.45, 0.9, 0.9, 1]);
   await expect(mongoApi(request).getProfile()).resolves.toEqual({ avatarUrl: mongoUrl, avatarMediaId: mongoAvatar.mediaId, avatarExpiresAt: null });
   await expect(mongoApi(request).remove("me-1")).rejects.toThrow("removal was not confirmed");
   request.mockResolvedValue({ data: { avatar: null } });
