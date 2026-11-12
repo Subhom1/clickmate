@@ -217,81 +217,59 @@ export default function Profile({ route }) {
     }
   };
 
-  const { platform } = route.params;
   const inputFieldCSS = `border rounded-3xl p-3 pl-5 mt-3 text-gray-500 border-primary_green_light text-start`;
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={styles.screen}>
       <StatusBar style="auto" />
-      <ScrollView
-        className="mx-7"
-        contentContainerStyle={{ paddingBottom: 90 }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Edit profile photo"
-          onPress={() => setPhotoEditorOpen(true)}
-          className="self-start mt-8 mb-3"
-          style={{ minWidth: 88, minHeight: 88, alignSelf: "flex-start", alignItems: "center", justifyContent: "center" }}
-        >
-          {userData?.avatarUrl ? <InitialsCircle
-            name={userData?.fullname || ""}
-            photoUri={userData?.avatarUrl}
-            styles={{ circle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#A7B0AD", overflow: "hidden", alignItems: "center", justifyContent: "center" }, initials: { color: "white", fontSize: 22 } }}
-          /> : <View style={styles.photoPlaceholder}><Icon name="camera" size={28} color="#67AB0F" /><View style={styles.photoPlus}><Icon name="plus" size={16} color="white" /></View></View>}
-        </Pressable>
-        <View
-          className={`flex-row items-center justify-end ${
-            platform == "ios" ? "mt-5" : "mt-16"
-          }`}
-        >
-          {editMode ? (
-            <>
-              <Pressable
-                disabled={profileSaving}
-                onPress={() => {
-                  updateUserData();
-                }}
-                className="flex-row items-center"
-              >
-                <Icon name="check" size={20} />
-                <Text className="ml-1">{profileSaving ? "Saving..." : "Update"}</Text>
-              </Pressable>
-              <Pressable
-                disabled={profileSaving}
-                onPress={() => {
-                  setEditMode(false);
-                  setNameError(false);
-                  setProfileError("");
-                }}
-                className="flex-row items-center"
-              >
-                <Text className="ml-5">Cancel</Text>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <Pressable
-                className="mr-3"
-                onPress={() => {
-                  setEditMode((editMode) => !editMode);
-                  setProfileError("");
-                }}
-              >
-                <Icon name="edit" size={20} />
-              </Pressable>
-              {/* <Icon name="settings" size={20} /> */}
-            </>
-          )}
-          {!editMode && (
-            <Pressable onPress={signOutt} className="ml-5">
-              <Text className="text-primary_red">Logout</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.profileCard}>
+          <View style={styles.headerRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile photo"
+              onPress={() => setPhotoEditorOpen(true)}
+              style={styles.avatarButton}
+            >
+              {userData?.avatarUrl ? <InitialsCircle
+                name={userData?.fullname || ""}
+                photoUri={userData?.avatarUrl}
+                styles={{ circle: styles.profileAvatar, initials: styles.profileInitials }}
+              /> : <View style={styles.photoPlaceholder}><Icon name="camera" size={28} color="#67AB0F" /><View style={styles.photoPlus}><Icon name="plus" size={16} color="white" /></View></View>}
             </Pressable>
-          )}
-        </View>
-        {profileError ? <Text accessibilityRole="alert" style={styles.textError}>{profileError}</Text> : null}
-        <View className="mt-5">
+            <View style={styles.headerActions}>
+              {editMode ? (
+                <>
+                  <Pressable accessibilityRole="button" disabled={profileSaving} onPress={updateUserData} style={styles.saveEditButton}>
+                    <Icon name="check" size={17} color="#fff" />
+                    <Text style={styles.saveEditText}>{profileSaving ? "Saving..." : "Update"}</Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" disabled={profileSaving} onPress={() => {
+                    setEditMode(false);
+                    setNameError(false);
+                    setProfileError("");
+                  }} style={styles.headerTextButton}>
+                    <Text style={styles.headerText}>Cancel</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Edit profile details" onPress={() => {
+                    setEditMode(true);
+                    setProfileError("");
+                  }} style={styles.editIconButton}>
+                    <Icon name="edit-2" size={19} color="#47790B" />
+                  </Pressable>
+                  <Pressable accessibilityRole="button" onPress={signOutt} style={styles.headerTextButton}>
+                    <Text style={styles.logoutText}>Logout</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          </View>
+          {profileError ? <Text accessibilityRole="alert" style={styles.textError}>{profileError}</Text> : null}
+          <View style={styles.identity}>
           {!editMode ? (
-            <Text className="text-2xl font-medium capitalize">
+            <Text style={styles.profileName}>
               {userData?.fullname}
             </Text>
           ) : (
@@ -305,17 +283,9 @@ export default function Profile({ route }) {
               value={fullname}
             />
           )}
-          {nameError && !fullname ? (
-            <Text style={styles.textError} className="pl-5 mt-1">
-              *fullname is required
-            </Text>
-          ) : (
-            <Text className="mt-1.5 h-3"></Text>
-          )}
-        </View>
-        <View className="">
+          {nameError && !fullname ? <Text style={styles.textError}>Full name is required.</Text> : null}
           {!editMode ? (
-            <Text className="text-gray-600 mb-7">{userData?.bio}</Text>
+            <Text style={styles.profileBio}>{userData?.bio}</Text>
           ) : (
             <TextInput
               placeholder="Describe your personality in short"
@@ -330,6 +300,7 @@ export default function Profile({ route }) {
               style={{ height: 100 }}
             />
           )}
+          </View>
         </View>
 
         {/* <TouchableOpacity
@@ -339,34 +310,32 @@ export default function Profile({ route }) {
           <Text className="text-white">Delete Account</Text>
         </TouchableOpacity> */}
 
-        <View>
+        <View style={styles.interestsCard}>
           {!editMode ? (
             <>
-              <Text className="mb-3 font-medium">Interests</Text>
+              <Text style={styles.sectionTitle}>Interests</Text>
               <View className="flex-row flex-wrap">
-                {userData?.interests.map((it, index) => (
+                {userData?.interests?.map((it) => (
                   <View
                     key={it._id}
-                    className="px-4 py-2 rounded-full mb-2 mr-1 bg-primary_green_light"
+                    style={styles.interestChip}
                   >
-                    <Text className="text-white">{it.text}</Text>
+                    <Text style={styles.interestText}>{it.text}</Text>
                   </View>
                 ))}
               </View>
             </>
           ) : (
             <>
-              <Text className="mb-3 font-medium">Interests</Text>
+              <Text style={styles.sectionTitle}>Interests</Text>
 
               <View className="flex-row flex-wrap">
-                {interests.map((it, index) => {
+                {interests.map((it) => {
                   const isExists = userInterestsIDs.includes(it._id);
                   return (
                     <Pressable
                       key={it._id}
-                      className={`px-4 py-2 rounded-full mb-2 mr-1 ${
-                        isExists ? "bg-primary_green_light" : "bg-gray-400"
-                      }`}
+                      style={[styles.interestChip, !isExists && styles.interestChipInactive]}
                       onPress={() => {
                         if (isExists) {
                           // If the item exists, remove it from userInterestsIDs
@@ -379,7 +348,7 @@ export default function Profile({ route }) {
                         }
                       }}
                     >
-                      <Text className="text-white">{it.text}</Text>
+                      <Text style={isExists ? styles.interestText : styles.interestTextInactive}>{it.text}</Text>
                     </Pressable>
                   );
                 })}
@@ -400,6 +369,7 @@ export default function Profile({ route }) {
         <SafeAreaView style={styles.photoBackdrop}>
           <View style={styles.photoSheet}>
             <Text style={styles.photoTitle}>{userData?.avatarUrl ? "Replace profile photo" : "Profile photo"}</Text>
+            <Text style={styles.photoHint}>{photoDraft ? "Preview your crop before saving." : userData?.avatarUrl ? "Choose a new photo or remove this one." : "Choose a photo to show on your profile."}</Text>
             {photoDraft ? (
               <Image
                 accessibilityLabel="Cropped photo preview"
@@ -409,39 +379,39 @@ export default function Profile({ route }) {
             ) : null}
             {photoBusy && <ActivityIndicator accessibilityLabel={photoRemoving ? "Removing photo" : photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
             {photoProgress !== null && photoBusy && (
-              <Text accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
+              <Text style={styles.photoStatus} accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
                 {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
               </Text>
             )}
-            {!photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
-              <Text>{userData?.avatarUrl ? "Upload new photo" : "Choose from gallery"}</Text>
+            {!photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={[styles.photoAction, styles.photoActionPrimary]}>
+              <Text style={styles.photoActionPrimaryText}>{userData?.avatarUrl ? "Upload new photo" : "Choose from gallery"}</Text>
             </Pressable>}
             {photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
-              <Text>Choose another photo</Text>
+              <Text style={styles.photoActionText}>Choose another photo</Text>
             </Pressable>}
             {photoDraft && (
-              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={styles.photoAction}>
-                <Text>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
+              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={[styles.photoAction, styles.photoActionPrimary]}>
+                <Text style={styles.photoActionPrimaryText}>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
               </Pressable>
             )}
             {userData?.avatarUrl && !photoDraft && (removeConfirm ? (
               <>
-                <Text>Remove your current profile photo?</Text>
-                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={removePhoto} style={styles.photoAction}>
-                  <Text>Confirm removal</Text>
+                <Text style={styles.removePrompt}>Remove your current profile photo?</Text>
+                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={removePhoto} style={[styles.photoAction, styles.photoActionDestructive]}>
+                  <Text style={styles.photoActionDestructiveText}>Confirm removal</Text>
                 </Pressable>
                 <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(false)} style={styles.photoAction}>
-                  <Text>Keep photo</Text>
+                  <Text style={styles.photoActionText}>Keep photo</Text>
                 </Pressable>
               </>
             ) : (
-              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(true)} style={styles.photoAction}>
-                <Text>Delete photo</Text>
+              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(true)} style={[styles.photoAction, styles.photoActionDestructive]}>
+                <Text style={styles.photoActionDestructiveText}>Delete photo</Text>
               </Pressable>
             ))}
             {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
-            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={closePhotoEditor} style={styles.photoAction}>
-              <Text>Cancel</Text>
+            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={closePhotoEditor} style={[styles.photoAction, styles.photoActionCancel]}>
+              <Text style={styles.photoActionText}>Cancel</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -450,16 +420,49 @@ export default function Profile({ route }) {
   );
 }
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: "#F7FAF5" },
+  content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 100, gap: 16 },
+  profileCard: { backgroundColor: "#FFFFFF", borderRadius: 28, borderWidth: 1, borderColor: "#E8F0E2", padding: 20 },
+  headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  avatarButton: { width: 96, height: 96, alignItems: "center", justifyContent: "center" },
+  profileAvatar: { width: 88, height: 88, borderRadius: 44, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "#A7B0AD" },
+  profileInitials: { color: "#FFFFFF", fontSize: 25, fontWeight: "600" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  editIconButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#EFF6E9", alignItems: "center", justifyContent: "center" },
+  headerTextButton: { minHeight: 44, paddingHorizontal: 10, justifyContent: "center", alignItems: "center" },
+  headerText: { color: "#4B5A48", fontSize: 14, fontWeight: "500" },
+  logoutText: { color: "#AB0F12", fontSize: 14, fontWeight: "600" },
+  saveEditButton: { minHeight: 44, paddingHorizontal: 13, borderRadius: 22, backgroundColor: "#67AB0F", flexDirection: "row", gap: 5, alignItems: "center" },
+  saveEditText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+  identity: { marginTop: 18 },
+  profileName: { color: "#172115", fontSize: 26, fontWeight: "700", lineHeight: 32, textTransform: "capitalize" },
+  profileBio: { color: "#667263", fontSize: 15, lineHeight: 22, marginTop: 6 },
+  interestsCard: { backgroundColor: "#FFFFFF", borderRadius: 24, borderWidth: 1, borderColor: "#E8F0E2", paddingHorizontal: 20, paddingTop: 19, paddingBottom: 13 },
+  sectionTitle: { color: "#172115", fontSize: 18, fontWeight: "600", marginBottom: 15 },
+  interestChip: { backgroundColor: "#EAF5E3", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8, marginBottom: 8 },
+  interestChipInactive: { backgroundColor: "#F1F3F0" },
+  interestText: { color: "#47790B", fontSize: 14, fontWeight: "500" },
+  interestTextInactive: { color: "#788375", fontSize: 14, fontWeight: "500" },
   textError: {
     color: "#AB0F12",
-    fontSize: 12,
+    fontSize: 13,
+    marginTop: 8,
   },
   photoBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#0006" },
-  photoSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, alignItems: "center", gap: 12 },
-  photoTitle: { fontSize: 20, fontWeight: "600" },
-  photoPreview: { width: 220, height: 220, borderRadius: 110 },
-  photoAction: { minHeight: 48, minWidth: 220, borderRadius: 24, backgroundColor: "#EAF5E3", justifyContent: "center", alignItems: "center" },
-  photoError: { color: "#AB0F12", textAlign: "center" },
-  photoPlaceholder: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#EAF5E3", borderWidth: 1, borderColor: "#A7D27C", alignItems: "center", justifyContent: "center" },
-  photoPlus: { position: "absolute", right: -3, bottom: -3, width: 24, height: 24, borderRadius: 12, backgroundColor: "#67AB0F", alignItems: "center", justifyContent: "center" },
+  photoSheet: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 25, paddingBottom: 20, alignItems: "center", gap: 10 },
+  photoTitle: { color: "#172115", fontSize: 21, fontWeight: "700", textAlign: "center" },
+  photoHint: { color: "#667263", fontSize: 14, lineHeight: 20, textAlign: "center", marginBottom: 8 },
+  photoPreview: { width: 196, height: 196, borderRadius: 98, marginBottom: 8 },
+  photoStatus: { color: "#47790B", fontSize: 14, fontWeight: "500" },
+  photoAction: { minHeight: 50, width: "100%", borderRadius: 25, backgroundColor: "#EAF5E3", justifyContent: "center", alignItems: "center" },
+  photoActionPrimary: { backgroundColor: "#67AB0F" },
+  photoActionCancel: { backgroundColor: "#F2F5EF" },
+  photoActionDestructive: { backgroundColor: "#FDEEEF" },
+  photoActionText: { color: "#2F432D", fontSize: 15, fontWeight: "600" },
+  photoActionPrimaryText: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
+  photoActionDestructiveText: { color: "#A0242A", fontSize: 15, fontWeight: "600" },
+  removePrompt: { color: "#4B5A48", fontSize: 14, textAlign: "center" },
+  photoError: { color: "#AB0F12", fontSize: 14, textAlign: "center" },
+  photoPlaceholder: { width: 88, height: 88, borderRadius: 44, backgroundColor: "#EAF5E3", borderWidth: 1, borderColor: "#A7D27C", alignItems: "center", justifyContent: "center" },
+  photoPlus: { position: "absolute", right: -1, bottom: -1, width: 26, height: 26, borderRadius: 13, backgroundColor: "#67AB0F", alignItems: "center", justifyContent: "center" },
 });

@@ -52,7 +52,8 @@ describe("Profile", () => {
   it("shows a left-aligned camera placeholder and gallery choice before upload", async () => {
     await renderProfile();
     const trigger = screen.getByLabelText("Edit profile photo");
-    expect(trigger).toHaveStyle({ alignSelf: "flex-start" });
+    expect(trigger).toHaveStyle({ width: 96, height: 96 });
+    expect(trigger.parent).toHaveStyle({ flexDirection: "row", justifyContent: "space-between" });
     expect(screen.getByText("camera")).toBeOnTheScreen();
     expect(screen.getByText("plus")).toBeOnTheScreen();
     await fireEvent.press(trigger);
@@ -259,11 +260,11 @@ describe("Profile", () => {
 
   it("validates the name and can cancel profile editing", async () => {
     await renderProfile();
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), "");
     await fireEvent.press(screen.getByText("Update"));
 
-    expect(screen.getByText("*fullname is required")).toBeOnTheScreen();
+    expect(screen.getByText("Full name is required.")).toBeOnTheScreen();
     expect(axios.patch).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText("Cancel"));
     expect(screen.getByText("Casey User")).toBeOnTheScreen();
@@ -274,7 +275,7 @@ describe("Profile", () => {
     Auth.currentUser = { uid: "firebase-1", delete: deleteUser };
     axios.delete.mockResolvedValue({});
     const { store } = await renderProfile();
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.press(screen.getByText("Delete Account"));
 
     await waitFor(() =>
@@ -293,7 +294,7 @@ describe("Profile", () => {
     };
     axios.patch.mockResolvedValue({ data: updatedUser });
     const { store } = await renderProfile();
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), "Casey New");
     await fireEvent.changeText(screen.getByPlaceholderText("Describe your personality in short"), "Trail runner");
     await fireEvent.press(screen.getByText("Hiking"));
@@ -314,7 +315,7 @@ describe("Profile", () => {
   it("keeps the confirmed avatar when profile details are updated", async () => {
     axios.patch.mockResolvedValue({ data: { ...initialUser, fullname: "Casey New" } });
     const { store } = await renderProfile({ ...initialUser, avatarUrl: "https://example.com/avatar.jpg", avatarExpiresAt: "2030-01-01T00:00:00.000Z" });
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), "Casey New");
     await fireEvent.press(screen.getByText("Update"));
     await waitFor(() => expect(screen.getByText("Casey New")).toBeOnTheScreen());
@@ -327,7 +328,7 @@ describe("Profile failure recovery", () => {
   it("asks the user to sign in if the edit token is unavailable", async () => {
     Auth.currentUser = null;
     await renderProfile();
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.press(screen.getByText("Update"));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Please sign in again to update your profile."));
     expect(axios.patch).not.toHaveBeenCalled();
@@ -349,7 +350,7 @@ describe("Profile failure recovery", () => {
     const updatedUser = { ...initialUser, fullname: "Casey New" };
     axios.patch.mockRejectedValueOnce(error).mockResolvedValueOnce({ data: updatedUser });
     const { store } = await renderProfile();
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), "Casey New");
     await fireEvent.press(screen.getByText("Update"));
 
@@ -374,7 +375,7 @@ describe("Profile failure recovery", () => {
     Auth.currentUser = { uid: "firebase-1", delete: deleteUser };
     axios.delete.mockRejectedValueOnce(error);
     const { store } = await renderProfile();
-    await fireEvent.press(screen.getByText("edit"));
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
     await fireEvent.press(screen.getByText("Delete Account"));
 
     await waitFor(() => expect(console.error).toHaveBeenCalledWith("Error deleting user account:", error));
