@@ -190,6 +190,30 @@ frontend path. Live upload and deployment remain unverified.
   and Android simulator behavior remain unverified; the user's saved test
   portrait is retained. Keep both PRs in draft pending these checks.
 
+## Final consolidation (12 November)
+
+- The user confirmed the replacement error cleared, and the iPhone profile now
+  displays the newly saved image. The MongoDB image has a 512-pixel original;
+  the backend serves 128- and 256-pixel JPEG variants. Shared avatars select an
+  initial size from display scale and upgrade after a fast load. This is a
+  load-time heuristic, not a measured network-speed or device-class guarantee.
+- Frontend PR #9 and backend PR #22 have green CI and clean merge states.
+  A fresh local run passed 26 frontend suites / 154 tests and 171 backend
+  tests plus syntax checks. iOS and Android JavaScript exports succeeded.
+  `git diff --check` passed in both worktrees. There are no configured
+  frontend lint or TypeScript check scripts.
+- The iPhone photo menu exposed `Upload new photo` and `Delete photo`;
+  tapping `Delete photo` showed `Confirm removal` and `Keep photo`. Tapping
+  `Keep photo` preserved the saved image. Unit tests cover successful and
+  failed deletion, replacement, permissions, cancellation, progress, and
+  adaptive image selection. Live destructive deletion is pending the user's
+  action-time confirmation. Android ADB listed no attached device, so Android
+  native behavior remains unverified.
+- The feature runs against the isolated local backend and MongoDB connection.
+  No production backend deployment or production avatar endpoint verification
+  has occurred. Do not describe the feature as production-verified on that
+  basis.
+
 ## References
 
 - [Expo SDK 57 ImagePicker](https://docs.expo.dev/versions/v57.0.0/sdk/imagepicker/)
