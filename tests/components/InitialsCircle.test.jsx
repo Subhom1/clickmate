@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { PixelRatio } from "react-native";
 import { InitialsCircle } from "../../app/components/CreateAvatar";
 import { API_BASE_URL } from "../../constant";
 import { setProfilePhotoAuthUser } from "../../app/profilePhoto/currentAuth";
@@ -47,7 +48,7 @@ describe("InitialsCircle", () => {
     const uri = `${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439011`;
     await render(<InitialsCircle name="Ada" photoUri={uri} styles={{}} />);
     await waitFor(() => expect(screen.getByLabelText("Ada profile photo")).toHaveProp("source", {
-      uri, headers: { Authorization: "Bearer test-token" },
+      uri: `${uri}?size=128`, headers: { Authorization: "Bearer test-token" },
     }));
     setProfilePhotoAuthUser(null);
   });
@@ -62,9 +63,33 @@ describe("InitialsCircle", () => {
     setProfilePhotoAuthUser({ getIdToken: jest.fn().mockResolvedValue("friend-token") });
     await render(<InitialsCircle name="Friend" avatarFileId="507f1f77bcf86cd799439012" styles={{}} />);
     await waitFor(() => expect(screen.getByLabelText("Friend profile photo")).toHaveProp("source", {
-      uri: `${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439012`,
+      uri: `${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439012?size=128`,
       headers: { Authorization: "Bearer friend-token" },
     }));
+  });
+
+  it("upgrades a dense profile avatar after a fast first load", async () => {
+    const density = jest.spyOn(PixelRatio, "get").mockReturnValue(3);
+    setProfilePhotoAuthUser({ getIdToken: jest.fn().mockResolvedValue("token") });
+    const uri = `${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439013`;
+    await render(<InitialsCircle name="Ada" photoUri={uri} styles={{ circle: { width: 88, height: 88 } }} />);
+    await waitFor(() => expect(screen.getByLabelText("Ada profile photo")).toHaveProp("source", {
+      uri: `${uri}?size=256`, headers: { Authorization: "Bearer token" },
+    }));
+    await fireEvent(screen.getByLabelText("Ada profile photo"), "loadStart");
+    await fireEvent(screen.getByLabelText("Ada profile photo"), "load");
+    await waitFor(() => expect(screen.getByLabelText("Ada profile photo")).toHaveProp("source", {
+      uri: `${uri}?size=512`, headers: { Authorization: "Bearer token" },
+    }));
+    density.mockRestore();
+  });
+
+  it("falls back to initials when the first image request fails", async () => {
+    setProfilePhotoAuthUser({ getIdToken: jest.fn().mockResolvedValue("token") });
+    await render(<InitialsCircle name="Ada" photoUri={`${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439013`} styles={{}} />);
+    const photo = await screen.findByLabelText("Ada profile photo");
+    await fireEvent(photo, "error");
+    expect(screen.getByText("A")).toBeOnTheScreen();
   });
 
   it.each([
