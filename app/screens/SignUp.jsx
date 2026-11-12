@@ -25,7 +25,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { useSetAtom } from "jotai";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 
 export default function Signup({ route }) {
   const [name, setName] = useState("");
@@ -62,8 +62,7 @@ export default function Signup({ route }) {
           email,
           password
         );
-        const token = await response.user.getIdToken();
-        await handleMongoDBRegister({ name, email }, token);
+        await handleMongoDBRegister({ name, email }, response.user);
         alert("Registration Successful: Check your email!");
       } catch (error) {
         console.error(error, "error");
@@ -87,15 +86,13 @@ export default function Signup({ route }) {
       signUpEmailPw();
     }
   };
-  const handleMongoDBRegister = async (user, token) => {
-    await axios
-      .post(`http://${IP}:5051/register`, user, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setUserMongoData(res.data.data);
-      })
-      .catch((e) => console.error(e.message, "Error details"));
+  const handleMongoDBRegister = async (user, firebaseUser) => {
+    const token = await firebaseUser.getIdToken();
+    if (!API_BASE_URL) throw new Error("A secure ClickMate API URL is required.");
+    const res = await axios.post(`${API_BASE_URL}/register`, user, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setUserMongoData(res.data.data);
   };
 
   const inputFieldCSS = `border rounded-full ${

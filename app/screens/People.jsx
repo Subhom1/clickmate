@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import io from "socket.io-client";
 import axios from "axios";
 import { IP } from "../../constant";
+import { InitialsCircle } from "../components/CreateAvatar";
 
 export default function People({ route }) {
   const [userData, setUserData] = useAtom(userState);
@@ -76,12 +77,14 @@ export default function People({ route }) {
             renderItem={({ item }) => (
               <View className="flex-row mt-2 justify-between bg-slate-200 px-8 py-4 rounded-2xl">
                 <Pressable
+                  className="flex-row items-center"
                   onPress={() => {
                     navigation.navigate("VisitorProfile", {
                       userEmail: item.email,
                     });
                   }}
                 >
+                  <InitialsCircle name={item.fullname} photoUri={item.avatarUrl} avatarFileId={item.avatarFileId} styles={{ circle: { width: 40, height: 40, borderRadius: 20, marginRight: 12 }, initials: { fontSize: 14 } }} />
                   <Text className="text-secondary_blue_deep text-lg capitalize">
                     {item.fullname}
                   </Text>

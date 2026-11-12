@@ -6,9 +6,11 @@ import axios from "axios";
 import { AuthContext, AuthProvider } from "../../../AuthContext";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { userState } from "../../../app/state/atoms/UserState";
+import { profilePhotoApi } from "../../../app/profilePhoto/api";
 
 const mockAuthListener = jest.fn();
 const mockUnsubscribe = jest.fn();
+const signedInUser = { uid: "u-1", email: "casey@example.com", getIdToken: jest.fn().mockResolvedValue("token-1") };
 
 jest.mock("../../../FirebaseConfig", () => ({
   Auth: {
@@ -19,6 +21,8 @@ jest.mock("../../../FirebaseConfig", () => ({
   },
 }));
 jest.mock("axios", () => ({ __esModule: true, default: { get: jest.fn() } }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
+jest.mock("../../../app/profilePhoto/api", () => ({ profilePhotoApi: { getProfile: jest.fn() } }));
 
 function AuthProbe() {
   const { user, platform } = React.useContext(AuthContext);
@@ -28,12 +32,15 @@ function AuthProbe() {
       <Text>{user?.email ?? "signed out"}</Text>
       <Text>{platform}</Text>
       <Text>{userData?.name ?? "no profile"}</Text>
+      <Text>{userData?.avatarUrl ?? "no avatar"}</Text>
     </View>
   );
 }
 
 beforeEach(() => {
   jest.resetAllMocks();
+  signedInUser.getIdToken.mockResolvedValue("token-1");
+  profilePhotoApi.getProfile.mockResolvedValue({ avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null });
 });
 
 describe("AuthProvider", () => {
@@ -65,11 +72,7 @@ describe("AuthProvider", () => {
     try {
       await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
       await act(async () => {
-        mockAuthListener.mock.calls[0][0]({
-          uid: "u-1",
-          email: "casey@example.com",
-          getIdToken: jest.fn().mockResolvedValue("id-token"),
-        });
+        mockAuthListener.mock.calls[0][0](signedInUser);
       });
 
       expect(screen.getByText("casey@example.com")).toBeOnTheScreen();
@@ -90,23 +93,41 @@ describe("AuthProvider", () => {
     const onAuthChange = mockAuthListener.mock.calls[0][0];
 
     await act(async () => {
-      onAuthChange({
-        uid: "user-1",
-        email: "casey@example.com",
-        getIdToken: jest.fn().mockResolvedValue("id-token"),
-      });
+      onAuthChange(signedInUser);
     });
 
     expect(screen.getByText("casey@example.com")).toBeOnTheScreen();
-    expect(axios.get).toHaveBeenCalledWith(
-      expect.stringMatching(/\/user\/casey@example\.com$/),
-      { headers: { Authorization: "Bearer id-token" } }
-    );
+    expect(axios.get).toHaveBeenCalledWith(expect.stringMatching(/\/user\/casey%40example\.com$/), {
+      headers: { Authorization: "Bearer token-1" },
+    });
     expect(screen.getByText("Casey User")).toBeOnTheScreen();
 
     await act(async () => {
       view.unmount();
     });
     expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores avatar metadata from a fresh profile response", async () => {
+    axios.get.mockResolvedValue({ data: { _id: "me-1", name: "Casey User" } });
+    profilePhotoApi.getProfile.mockResolvedValue({ avatarUrl: "https://example.com/avatar.jpg", avatarMediaId: "media-1", avatarExpiresAt: new Date(Date.now() + 300000).toISOString() });
+    await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
+    await act(async () => {
+      mockAuthListener.mock.calls[0][0](signedInUser);
+    });
+    expect(screen.getByText("https://example.com/avatar.jpg")).toBeOnTheScreen();
+  });
+
+  it("clears the avatar on sign-out and ignores an old profile response", async () => {
+    let resolveProfile;
+    axios.get.mockReturnValue(new Promise((resolve) => { resolveProfile = resolve; }));
+    await renderWithProviders(<AuthProvider><AuthProbe /></AuthProvider>);
+    const onAuthChange = mockAuthListener.mock.calls[0][0];
+    await act(async () => { onAuthChange(signedInUser); });
+    await act(async () => { onAuthChange(null); });
+    await act(async () => { resolveProfile({ data: { name: "Old User", avatarUrl: "https://example.com/old.jpg" } }); });
+    expect(screen.getByText("signed out")).toBeOnTheScreen();
+    expect(screen.getByText("no avatar")).toBeOnTheScreen();
+    expect(screen.getByText("no profile")).toBeOnTheScreen();
   });
 });

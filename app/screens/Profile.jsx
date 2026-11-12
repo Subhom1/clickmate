@@ -8,6 +8,10 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  Modal,
+  Image,
+  ActivityIndicator,
+  AppState,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
@@ -15,8 +19,11 @@ import { signOut } from "firebase/auth";
 import axios from "axios";
 import { useAtom, useSetAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
-import { IP } from "../../constant";
+import { IP, API_BASE_URL } from "../../constant";
 import Icon from "@expo/vector-icons/Feather";
+import { InitialsCircle } from "../components/CreateAvatar";
+import { selectProfilePhoto } from "../profilePhoto/selectPhoto";
+import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../profilePhoto/api";
 
 export default function Profile({ route }) {
   const [userData, setUserData] = useAtom(userState);
@@ -27,9 +34,112 @@ export default function Profile({ route }) {
   const [interests, setAllInterests] = useState([]);
   const [userInterestsIDs, setUserInterestsIDs] = useState([]);
   const [nameError, setNameError] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
+  const [photoDraft, setPhotoDraft] = useState(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [photoProgress, setPhotoProgress] = useState(null);
+  const [photoCanRetry, setPhotoCanRetry] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState(false);
+  const [photoRemoving, setPhotoRemoving] = useState(false);
+  const choosePhoto = async (source) => {
+    if (photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoError("");
+    try {
+      const selected = await selectProfilePhoto(source);
+      if (selected) {
+        setPhotoDraft(selected);
+        setRemoveConfirm(false);
+        setPhotoCanRetry(false);
+        setPhotoProgress(null);
+      }
+    } catch (error) {
+      setPhotoError(error?.message || "The photo could not be prepared.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+  const closePhotoEditor = () => {
+    if (photoBusy) return;
+    setPhotoDraft(null);
+    setPhotoError("");
+    setPhotoProgress(null);
+    setPhotoCanRetry(false);
+    setRemoveConfirm(false);
+    setPhotoEditorOpen(false);
+  };
+  const savePhoto = async () => {
+    if (!photoDraft || !userData?._id || photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoError("");
+    setPhotoProgress(0);
+    try {
+      const result = await profilePhotoApi.save(userData._id, photoDraft, setPhotoProgress);
+      if (result?.id !== userData._id || !result.avatarUrl) {
+        throw new Error("The updated profile photo was not returned.");
+      }
+      setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl, avatarMediaId: result.avatarMediaId, avatarExpiresAt: result.avatarExpiresAt }));
+      setPhotoDraft(null);
+      setPhotoProgress(null);
+      setPhotoCanRetry(false);
+      setPhotoEditorOpen(false);
+    } catch (error) {
+      setPhotoError(error?.message || "The photo could not be saved.");
+      setPhotoProgress(null);
+      setPhotoCanRetry(!(error instanceof ProfilePhotoApiUnavailableError));
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+  const removePhoto = async () => {
+    if (!removeConfirm || !userData?._id || !userData?.avatarUrl || photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoRemoving(true);
+    setPhotoError("");
+    try {
+      const result = await profilePhotoApi.remove(userData._id);
+      if (result?.id !== userData._id || result.avatarUrl !== null) {
+        throw new Error("Photo removal was not confirmed.");
+      }
+      setUserData((current) => ({ ...current, avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null }));
+      closePhotoEditorAfterRemoval();
+    } catch (error) {
+      setPhotoError(error?.message || "The photo could not be removed.");
+    } finally {
+      setPhotoBusy(false);
+      setPhotoRemoving(false);
+    }
+  };
+  const closePhotoEditorAfterRemoval = () => {
+    setPhotoDraft(null);
+    setRemoveConfirm(false);
+    setPhotoEditorOpen(false);
+  };
   useEffect(() => {
     getAllInterests();
   }, []);
+  useEffect(() => {
+    if (!userData?._id || !userData?.avatarMediaId || !userData?.avatarExpiresAt) return;
+    let active = true;
+    let retryTimer;
+    const refresh = async () => {
+      try {
+        const avatar = await profilePhotoApi.getProfile();
+        if (active) setUserData((current) => current?._id === userData._id ? { ...current, ...avatar } : current);
+      } catch {
+        if (active) retryTimer = setTimeout(refresh, 30000);
+      }
+    };
+    const delay = Math.max(0, Date.parse(userData.avatarExpiresAt) - Date.now() - 30000);
+    const expiryTimer = setTimeout(refresh, Number.isFinite(delay) ? delay : 0);
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && Date.parse(userData.avatarExpiresAt) - Date.now() < 30000) refresh();
+    });
+    return () => { active = false; clearTimeout(expiryTimer); clearTimeout(retryTimer); subscription.remove(); };
+  }, [userData?._id, userData?.avatarMediaId, userData?.avatarExpiresAt]);
   useEffect(() => {
     if (userData) {
       setUserInterestsIDs(userData?.interests.map((item) => item._id));
@@ -64,12 +174,16 @@ export default function Profile({ route }) {
     }
   };
   const getAllInterests = async () => {
-    await axios
-      .get(`http://${IP}:5051/interests`)
-      .then((res) => setAllInterests(res.data))
-      .catch((e) => console.error(e, "Error fetching interests"));
+    try {
+      if (!API_BASE_URL) throw new Error("A secure ClickMate API URL is required.");
+      const res = await axios.get(`${API_BASE_URL}/interests`);
+      setAllInterests(res.data);
+    } catch (e) {
+      console.error(e, "Error fetching interests");
+    }
   };
   const updateUserData = async () => {
+    if (profileSaving) return;
     if (!fullname) {
       setNameError(true);
       return;
@@ -79,72 +193,83 @@ export default function Profile({ route }) {
       bio,
       interests: userInterestsIDs,
     };
-    await axios
-      .patch(`http://${IP}:5051/user/${userData?._id}`, newUserData)
-      .then((res) => {
-        setUserStateData(res.data);
-        setEditMode((editMode) => !editMode);
-      })
-      .catch((e) => console.error(e, "Error updating user data"));
+    setProfileSaving(true);
+    setProfileError("");
+    try {
+      if (!userData?._id) throw new Error("Your profile is still loading. Please try again.");
+      const token = await Auth.currentUser?.getIdToken();
+      if (!token) throw new Error("Please sign in again to update your profile.");
+      if (!API_BASE_URL) throw new Error("A secure ClickMate API URL is required.");
+      const res = await axios.patch(`${API_BASE_URL}/user/${userData?._id}`, newUserData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserStateData((current) => ({
+        ...current,
+        ...res.data,
+        ...(current?.avatarUrl ? { avatarUrl: current.avatarUrl, avatarExpiresAt: current.avatarExpiresAt } : {}),
+      }));
+      setEditMode(false);
+    } catch (e) {
+      setProfileError(e?.response?.data?.message || e?.message || "Could not update profile. Please try again.");
+      console.error(e, "Error updating user data");
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
-  const { platform } = route.params;
   const inputFieldCSS = `border rounded-3xl p-3 pl-5 mt-3 text-gray-500 border-primary_green_light text-start`;
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={styles.screen}>
       <StatusBar style="auto" />
-      <ScrollView
-        className="mx-7"
-        contentContainerStyle={{ paddingBottom: 90 }}
-      >
-        <View
-          className={`flex-row items-center justify-end ${
-            platform == "ios" ? "mt-5" : "mt-16"
-          }`}
-        >
-          {editMode ? (
-            <>
-              <Pressable
-                onPress={() => {
-                  updateUserData();
-                }}
-                className="flex-row items-center"
-              >
-                <Icon name="check" size={20} />
-                <Text className="ml-1">Update</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setEditMode(false);
-                  setNameError(false);
-                }}
-                className="flex-row items-center"
-              >
-                <Text className="ml-5">Cancel</Text>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <Pressable
-                className="mr-3"
-                onPress={() => {
-                  setEditMode((editMode) => !editMode);
-                }}
-              >
-                <Icon name="edit" size={20} />
-              </Pressable>
-              {/* <Icon name="settings" size={20} /> */}
-            </>
-          )}
-          {!editMode && (
-            <Pressable onPress={signOutt} className="ml-5">
-              <Text className="text-primary_red">Logout</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.profileCard}>
+          <View style={styles.headerRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile photo"
+              onPress={() => setPhotoEditorOpen(true)}
+              style={styles.avatarButton}
+            >
+              {userData?.avatarUrl ? <InitialsCircle
+                name={userData?.fullname || ""}
+                photoUri={userData?.avatarUrl}
+                styles={{ circle: styles.profileAvatar, initials: styles.profileInitials }}
+              /> : <View style={styles.photoPlaceholder}><Icon name="camera" size={28} color="#67AB0F" /><View style={styles.photoPlus}><Icon name="plus" size={16} color="white" /></View></View>}
             </Pressable>
-          )}
-        </View>
-        <View className="mt-5">
+            <View style={styles.headerActions}>
+              {editMode ? (
+                <>
+                  <Pressable accessibilityRole="button" disabled={profileSaving} onPress={updateUserData} style={styles.saveEditButton}>
+                    <Icon name="check" size={17} color="#fff" />
+                    <Text style={styles.saveEditText}>{profileSaving ? "Saving..." : "Update"}</Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" disabled={profileSaving} onPress={() => {
+                    setEditMode(false);
+                    setNameError(false);
+                    setProfileError("");
+                  }} style={styles.headerTextButton}>
+                    <Text style={styles.headerText}>Cancel</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Edit profile details" onPress={() => {
+                    setEditMode(true);
+                    setProfileError("");
+                  }} style={styles.editIconButton}>
+                    <Icon name="edit-2" size={19} color="#47790B" />
+                  </Pressable>
+                  <Pressable accessibilityRole="button" onPress={signOutt} style={styles.headerTextButton}>
+                    <Text style={styles.logoutText}>Logout</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          </View>
+          {profileError ? <Text accessibilityRole="alert" style={styles.textError}>{profileError}</Text> : null}
+          <View style={styles.identity}>
           {!editMode ? (
-            <Text className="text-2xl font-medium capitalize">
+            <Text style={styles.profileName}>
               {userData?.fullname}
             </Text>
           ) : (
@@ -158,17 +283,9 @@ export default function Profile({ route }) {
               value={fullname}
             />
           )}
-          {nameError && !fullname ? (
-            <Text style={styles.textError} className="pl-5 mt-1">
-              *fullname is required
-            </Text>
-          ) : (
-            <Text className="mt-1.5 h-3"></Text>
-          )}
-        </View>
-        <View className="">
+          {nameError && !fullname ? <Text style={styles.textError}>Full name is required.</Text> : null}
           {!editMode ? (
-            <Text className="text-gray-600 mb-7">{userData?.bio}</Text>
+            <Text style={styles.profileBio}>{userData?.bio}</Text>
           ) : (
             <TextInput
               placeholder="Describe your personality in short"
@@ -183,6 +300,7 @@ export default function Profile({ route }) {
               style={{ height: 100 }}
             />
           )}
+          </View>
         </View>
 
         {/* <TouchableOpacity
@@ -192,34 +310,32 @@ export default function Profile({ route }) {
           <Text className="text-white">Delete Account</Text>
         </TouchableOpacity> */}
 
-        <View>
+        <View style={styles.interestsCard}>
           {!editMode ? (
             <>
-              <Text className="mb-3 font-medium">Interests</Text>
+              <Text style={styles.sectionTitle}>Interests</Text>
               <View className="flex-row flex-wrap">
-                {userData?.interests.map((it, index) => (
+                {userData?.interests?.map((it) => (
                   <View
                     key={it._id}
-                    className="px-4 py-2 rounded-full mb-2 mr-1 bg-primary_green_light"
+                    style={styles.interestChip}
                   >
-                    <Text className="text-white">{it.text}</Text>
+                    <Text style={styles.interestText}>{it.text}</Text>
                   </View>
                 ))}
               </View>
             </>
           ) : (
             <>
-              <Text className="mb-3 font-medium">Interests</Text>
+              <Text style={styles.sectionTitle}>Interests</Text>
 
               <View className="flex-row flex-wrap">
-                {interests.map((it, index) => {
+                {interests.map((it) => {
                   const isExists = userInterestsIDs.includes(it._id);
                   return (
                     <Pressable
                       key={it._id}
-                      className={`px-4 py-2 rounded-full mb-2 mr-1 ${
-                        isExists ? "bg-primary_green_light" : "bg-gray-400"
-                      }`}
+                      style={[styles.interestChip, !isExists && styles.interestChipInactive]}
                       onPress={() => {
                         if (isExists) {
                           // If the item exists, remove it from userInterestsIDs
@@ -232,7 +348,7 @@ export default function Profile({ route }) {
                         }
                       }}
                     >
-                      <Text className="text-white">{it.text}</Text>
+                      <Text style={isExists ? styles.interestText : styles.interestTextInactive}>{it.text}</Text>
                     </Pressable>
                   );
                 })}
@@ -249,12 +365,104 @@ export default function Profile({ route }) {
           </TouchableOpacity>
         )}
       </ScrollView>
+      <Modal visible={photoEditorOpen} animationType="slide" transparent onRequestClose={closePhotoEditor}>
+        <SafeAreaView style={styles.photoBackdrop}>
+          <View style={styles.photoSheet}>
+            <Text style={styles.photoTitle}>{userData?.avatarUrl ? "Replace profile photo" : "Profile photo"}</Text>
+            <Text style={styles.photoHint}>{photoDraft ? "Preview your crop before saving." : userData?.avatarUrl ? "Choose a new photo or remove this one." : "Choose a photo to show on your profile."}</Text>
+            {photoDraft ? (
+              <Image
+                accessibilityLabel="Cropped photo preview"
+                source={{ uri: photoDraft.uri }}
+                style={styles.photoPreview}
+              />
+            ) : null}
+            {photoBusy && <ActivityIndicator accessibilityLabel={photoRemoving ? "Removing photo" : photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
+            {photoProgress !== null && photoBusy && (
+              <Text style={styles.photoStatus} accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
+                {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
+              </Text>
+            )}
+            {!photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={[styles.photoAction, styles.photoActionPrimary]}>
+              <Text style={styles.photoActionPrimaryText}>{userData?.avatarUrl ? "Upload new photo" : "Choose from gallery"}</Text>
+            </Pressable>}
+            {photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
+              <Text style={styles.photoActionText}>Choose another photo</Text>
+            </Pressable>}
+            {photoDraft && (
+              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={[styles.photoAction, styles.photoActionPrimary]}>
+                <Text style={styles.photoActionPrimaryText}>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
+              </Pressable>
+            )}
+            {userData?.avatarUrl && !photoDraft && (removeConfirm ? (
+              <>
+                <Text style={styles.removePrompt}>Remove your current profile photo?</Text>
+                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={removePhoto} style={[styles.photoAction, styles.photoActionDestructive]}>
+                  <Text style={styles.photoActionDestructiveText}>Confirm removal</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(false)} style={styles.photoAction}>
+                  <Text style={styles.photoActionText}>Keep photo</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(true)} style={[styles.photoAction, styles.photoActionDestructive]}>
+                <Text style={styles.photoActionDestructiveText}>Delete photo</Text>
+              </Pressable>
+            ))}
+            {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
+            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={closePhotoEditor} style={[styles.photoAction, styles.photoActionCancel]}>
+              <Text style={styles.photoActionText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: "#F7FAF5" },
+  content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 100, gap: 16 },
+  profileCard: { backgroundColor: "#FFFFFF", borderRadius: 28, borderWidth: 1, borderColor: "#E8F0E2", padding: 20 },
+  headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  avatarButton: { width: 96, height: 96, alignItems: "center", justifyContent: "center" },
+  profileAvatar: { width: 88, height: 88, borderRadius: 44, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "#A7B0AD" },
+  profileInitials: { color: "#FFFFFF", fontSize: 25, fontWeight: "600" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  editIconButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#EFF6E9", alignItems: "center", justifyContent: "center" },
+  headerTextButton: { minHeight: 44, paddingHorizontal: 10, justifyContent: "center", alignItems: "center" },
+  headerText: { color: "#4B5A48", fontSize: 14, fontWeight: "500" },
+  logoutText: { color: "#AB0F12", fontSize: 14, fontWeight: "600" },
+  saveEditButton: { minHeight: 44, paddingHorizontal: 13, borderRadius: 22, backgroundColor: "#67AB0F", flexDirection: "row", gap: 5, alignItems: "center" },
+  saveEditText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+  identity: { marginTop: 18 },
+  profileName: { color: "#172115", fontSize: 26, fontWeight: "700", lineHeight: 32, textTransform: "capitalize" },
+  profileBio: { color: "#667263", fontSize: 15, lineHeight: 22, marginTop: 6 },
+  interestsCard: { backgroundColor: "#FFFFFF", borderRadius: 24, borderWidth: 1, borderColor: "#E8F0E2", paddingHorizontal: 20, paddingTop: 19, paddingBottom: 13 },
+  sectionTitle: { color: "#172115", fontSize: 18, fontWeight: "600", marginBottom: 15 },
+  interestChip: { backgroundColor: "#EAF5E3", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8, marginBottom: 8 },
+  interestChipInactive: { backgroundColor: "#F1F3F0" },
+  interestText: { color: "#47790B", fontSize: 14, fontWeight: "500" },
+  interestTextInactive: { color: "#788375", fontSize: 14, fontWeight: "500" },
   textError: {
     color: "#AB0F12",
-    fontSize: 12,
+    fontSize: 13,
+    marginTop: 8,
   },
+  photoBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#0006" },
+  photoSheet: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 25, paddingBottom: 20, alignItems: "center", gap: 10 },
+  photoTitle: { color: "#172115", fontSize: 21, fontWeight: "700", textAlign: "center" },
+  photoHint: { color: "#667263", fontSize: 14, lineHeight: 20, textAlign: "center", marginBottom: 8 },
+  photoPreview: { width: 196, height: 196, borderRadius: 98, marginBottom: 8 },
+  photoStatus: { color: "#47790B", fontSize: 14, fontWeight: "500" },
+  photoAction: { minHeight: 50, width: "100%", borderRadius: 25, backgroundColor: "#EAF5E3", justifyContent: "center", alignItems: "center" },
+  photoActionPrimary: { backgroundColor: "#67AB0F" },
+  photoActionCancel: { backgroundColor: "#F2F5EF" },
+  photoActionDestructive: { backgroundColor: "#FDEEEF" },
+  photoActionText: { color: "#2F432D", fontSize: 15, fontWeight: "600" },
+  photoActionPrimaryText: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
+  photoActionDestructiveText: { color: "#A0242A", fontSize: 15, fontWeight: "600" },
+  removePrompt: { color: "#4B5A48", fontSize: 14, textAlign: "center" },
+  photoError: { color: "#AB0F12", fontSize: 14, textAlign: "center" },
+  photoPlaceholder: { width: 88, height: 88, borderRadius: 44, backgroundColor: "#EAF5E3", borderWidth: 1, borderColor: "#A7D27C", alignItems: "center", justifyContent: "center" },
+  photoPlus: { position: "absolute", right: -1, bottom: -1, width: 26, height: 26, borderRadius: 13, backgroundColor: "#67AB0F", alignItems: "center", justifyContent: "center" },
 });

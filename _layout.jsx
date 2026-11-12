@@ -203,6 +203,7 @@ const MyTabs = ({ route }) => {
           tabBarIcon: ({ focused }) => (
             <InitialsCircle
               name={userData ? userData?.fullname : ""}
+              photoUri={userData?.avatarUrl}
               focused={focused}
               styles={styles}
               nav={true}

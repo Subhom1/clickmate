@@ -5,6 +5,7 @@ import axios from "axios";
 import { IP } from "../../constant";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
+import { InitialsCircle } from "../components/CreateAvatar";
 
 export default function VisitorProfile({ route }) {
   const [visitorData, setVisitorData] = useState(null);
@@ -34,6 +35,7 @@ export default function VisitorProfile({ route }) {
           <Icon name="arrow-back-ios-new" size={20} />
         </Pressable>
         <View className="mt-5">
+          <InitialsCircle name={visitorData?.fullname || ""} photoUri={visitorData?.avatarUrl} avatarFileId={visitorData?.avatarFileId} styles={{ circle: { width: 72, height: 72, borderRadius: 36, marginBottom: 12 }, initials: { fontSize: 22 } }} />
           <Text className="text-2xl font-medium capitalize">
             {visitorData?.fullname}
           </Text>

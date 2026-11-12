@@ -155,6 +155,8 @@ export const IP = expoHost ?? process.env.EXPO_PUBLIC_IP;
 
 Expo's `--tunnel` connection only tunnels the development server, not the backend on port `5051`. For a phone outside the Mac's local network, use a reachable backend URL.
 
+For a release build, set `EXPO_PUBLIC_API_BASE_URL` to the backend's HTTPS origin. Authenticated profile and avatar requests use that origin; local HTTP on port `5051` is for development only. The backend must have its private avatar storage configured before photo upload sessions can succeed. Storage credentials belong only on the backend.
+
 
 ---
 

@@ -25,6 +25,7 @@ jest.mock("firebase/auth", () => ({
 
 jest.mock("../../../FirebaseConfig", () => ({ Auth: {} }));
 jest.mock("axios", () => ({ get: jest.fn(), post: jest.fn() }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("@expo/vector-icons/Octicons", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -177,9 +178,7 @@ describe("Sign up", () => {
     expect(screen.queryByText("Sign Up")).toBeNull();
     expect(axios.post).not.toHaveBeenCalled();
     expect(global.alert).not.toHaveBeenCalled();
-    await act(async () => {
-      resolveSignup({ user: { uid: "u-2", getIdToken: jest.fn().mockResolvedValue("id-token") } });
-    });
+    await act(async () => { resolveSignup({ user: { uid: "u-2", getIdToken: jest.fn().mockResolvedValue("token-2") } }); });
     expect(axios.post).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Sign Up")).toBeOnTheScreen();
   });
@@ -198,9 +197,7 @@ describe("Sign up", () => {
   });
 
   it("creates an account, registers the profile, and navigates back to login", async () => {
-    createUserWithEmailAndPassword.mockResolvedValue({
-      user: { uid: "u-2", getIdToken: jest.fn().mockResolvedValue("id-token") },
-    });
+    createUserWithEmailAndPassword.mockResolvedValue({ user: { uid: "u-2", getIdToken: jest.fn().mockResolvedValue("token-2") } });
     axios.post.mockResolvedValue({ data: { data: { name: "Casey User" } } });
     await renderSignup();
     await fillSignup();
@@ -210,11 +207,10 @@ describe("Sign up", () => {
       expect(createUserWithEmailAndPassword).toHaveBeenCalledWith({}, "casey@example.com", "secret1")
     );
     await waitFor(() =>
-      expect(axios.post).toHaveBeenCalledWith(
-        expect.stringMatching(/\/register$/),
-        { name: "Casey User", email: "casey@example.com" },
-        { headers: { Authorization: "Bearer id-token" } }
-      )
+      expect(axios.post).toHaveBeenCalledWith(expect.stringMatching(/\/register$/), {
+        name: "Casey User",
+        email: "casey@example.com",
+      }, { headers: { Authorization: "Bearer token-2" } })
     );
     expect(global.alert).toHaveBeenCalledWith("Registration Successful: Check your email!");
     await fireEvent.press(screen.getByText("Login"));
