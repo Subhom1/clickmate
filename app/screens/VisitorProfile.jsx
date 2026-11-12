@@ -35,7 +35,7 @@ export default function VisitorProfile({ route }) {
           <Icon name="arrow-back-ios-new" size={20} />
         </Pressable>
         <View className="mt-5">
-          <InitialsCircle name={visitorData?.fullname || ""} photoUri={visitorData?.avatarUrl} styles={{ circle: { width: 72, height: 72, borderRadius: 36, marginBottom: 12 }, initials: { fontSize: 22 } }} />
+          <InitialsCircle name={visitorData?.fullname || ""} photoUri={visitorData?.avatarUrl} avatarFileId={visitorData?.avatarFileId} styles={{ circle: { width: 72, height: 72, borderRadius: 36, marginBottom: 12 }, initials: { fontSize: 22 } }} />
           <Text className="text-2xl font-medium capitalize">
             {visitorData?.fullname}
           </Text>

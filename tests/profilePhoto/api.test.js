@@ -1,4 +1,4 @@
-import { profilePhotoApi, ProfilePhotoApiError, ProfilePhotoApiUnavailableError, createPresignedProfilePhotoApi, createMultipartProfilePhotoApi } from "../../app/profilePhoto/api";
+import { profilePhotoApi, ProfilePhotoApiError, ProfilePhotoApiUnavailableError, createPresignedProfilePhotoApi, createMultipartProfilePhotoApi, createMongoProfilePhotoApi } from "../../app/profilePhoto/api";
 import { createMockProfilePhotoApi } from "../mocks/profilePhotoApi";
 
 jest.mock("../../FirebaseConfig", () => ({ Auth: { currentUser: null } }));
@@ -127,4 +127,41 @@ it("reports an unavailable backend session without uploading the file", async ()
   await expect(api.save("me-1", photo)).rejects.toThrow("Upload session unavailable");
   await expect(api.save("me-1", photo)).rejects.toBeInstanceOf(ProfilePhotoApiUnavailableError);
   expect(upload).not.toHaveBeenCalled();
+});
+
+const mongoAvatar = { mediaId: "507f1f77bcf86cd799439011", contentType: "image/jpeg", width: 512, height: 512 };
+const mongoUrl = `http://localhost:5051/v1/avatar-files/${mongoAvatar.mediaId}`;
+const mongoApi = request => createMongoProfilePhotoApi({ request, getToken: async () => "token", baseUrl: "http://localhost:5051", FileClass: FakeFile });
+
+it("uploads the cropped JPEG with authentication and maps MongoDB metadata", async () => {
+  const request = jest.fn().mockResolvedValue({ data: { avatar: mongoAvatar } });
+  upload.mockImplementation(async (_url, options) => {
+    options.onProgress({ bytesSent: 500, totalBytes: 1000 });
+    return { status: 201, body: JSON.stringify({ avatar: mongoAvatar }) };
+  });
+  const progress = jest.fn();
+  await expect(mongoApi(request).save("me-1", photo, progress)).resolves.toEqual({
+    id: "me-1", avatarUrl: mongoUrl, avatarMediaId: mongoAvatar.mediaId, avatarExpiresAt: null,
+  });
+  expect(upload).toHaveBeenCalledWith("http://localhost:5051/v1/me/avatar-file", expect.objectContaining({
+    httpMethod: "POST", fieldName: "file", headers: { Authorization: "Bearer token" },
+  }));
+  expect(progress.mock.calls.map(([fraction]) => fraction)).toEqual([0, 0.45, 0.9, 1]);
+  await expect(mongoApi(request).getProfile()).resolves.toEqual({ avatarUrl: mongoUrl, avatarMediaId: mongoAvatar.mediaId, avatarExpiresAt: null });
+  await expect(mongoApi(request).remove("me-1")).rejects.toThrow("removal was not confirmed");
+  request.mockResolvedValue({ data: { avatar: null } });
+  await expect(mongoApi(request).remove("me-1")).resolves.toEqual({ id: "me-1", avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null });
+});
+
+it("rejects invalid files, failed upload responses, and malformed MongoDB metadata", async () => {
+  const request = jest.fn();
+  await expect(mongoApi(request).save("me-1", { ...photo, width: 400 })).rejects.toThrow("processed profile photo is invalid");
+  fileSize = 2 * 1024 * 1024 + 1;
+  await expect(mongoApi(request).save("me-1", photo)).rejects.toThrow("smaller than 2 MB");
+  fileSize = 1000;
+  upload.mockResolvedValue({ status: 503, body: JSON.stringify({ message: "Database unavailable" }) });
+  await expect(mongoApi(request).save("me-1", photo)).rejects.toThrow("Database unavailable");
+  upload.mockResolvedValue({ status: 201, body: JSON.stringify({ avatar: { ...mongoAvatar, height: 400 } }) });
+  await expect(mongoApi(request).save("me-1", photo)).rejects.toThrow("updated profile photo was not returned");
+  expect(request).not.toHaveBeenCalled();
 });

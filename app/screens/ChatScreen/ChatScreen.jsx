@@ -140,6 +140,7 @@ const ChatScreen = ({ route }) => {
         />
         <MessagesList
           avatarUrl={secondUser?.avatarUrl}
+          avatarFileId={secondUser?.avatarFileId}
           messagesHistory={messages}
           fullName={secondUser?.fullname}
         />

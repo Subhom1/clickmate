@@ -57,7 +57,7 @@ export default function Result({ route }) {
         </Text>
         {matchedUser && (
           <View style={{ alignItems: "center", marginTop: 32 }}>
-            <InitialsCircle name={matchedUser.fullname} photoUri={matchedUser.avatarUrl} styles={{ circle: { width: 72, height: 72, borderRadius: 36 }, initials: { fontSize: 22 } }} />
+            <InitialsCircle name={matchedUser.fullname} photoUri={matchedUser.avatarUrl} avatarFileId={matchedUser.avatarFileId} styles={{ circle: { width: 72, height: 72, borderRadius: 36 }, initials: { fontSize: 22 } }} />
           <Text className="text-2xl text-center mt-12 capitalize text-secondary_blue_deep">
             {matchedUser.fullname}
           </Text>

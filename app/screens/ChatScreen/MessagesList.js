@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { ScrollView, View, StyleSheet, Text, Keyboard, Image } from "react-native";
 import { InitialsCircle } from "../../components/CreateAvatar";
 
-const MessagesList = ({ messagesHistory, fullName, avatarUrl }) => {
+const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) => {
   const scrollViewRef = useRef();
 
   const goToBottomList = () => {
@@ -25,13 +25,13 @@ const MessagesList = ({ messagesHistory, fullName, avatarUrl }) => {
     >
       {messagesHistory &&
         messagesHistory.map((message, index) => (
-          <Message key={index} {...{ message }} fullName={fullName} avatarUrl={avatarUrl} />
+          <Message key={index} {...{ message }} fullName={fullName} avatarUrl={avatarUrl} avatarFileId={avatarFileId} />
         ))}
     </ScrollView>
   );
 };
 
-const Message = ({ message, fullName, avatarUrl }) => {
+const Message = ({ message, fullName, avatarUrl, avatarFileId }) => {
   return (
     <View
       style={[
@@ -42,7 +42,7 @@ const Message = ({ message, fullName, avatarUrl }) => {
       ]}
     >
       {message.from !== "2" ? (
-        <InitialsCircle name={fullName} photoUri={avatarUrl} styles={styles} />
+        <InitialsCircle name={fullName} photoUri={avatarUrl} avatarFileId={avatarFileId} styles={styles} />
       ) : null}
       <View
         style={[

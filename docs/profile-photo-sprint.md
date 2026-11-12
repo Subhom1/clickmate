@@ -13,7 +13,7 @@ frontend regression sprint in `tests/SPRINT.md`.
 | 4 | Add removal flow and persistence refresh | Complete as frontend flow; backend persistence unverified |
 | 5 | Propagate avatars across relevant screens | Complete for supplied avatar URLs; backend mapping and expiry refresh pending |
 | 6 | Platform and end-to-end validation, accessibility, error recovery | In progress: frontend validation complete; live storage and photo picker acceptance blocked |
-| 7 | Full regression, cleanup, acceptance report | Pending |
+| 7 | Full regression, cleanup, acceptance report | In progress: MongoDB implementation tested; live iPhone upload and restart acceptance pending |
 
 ## Day 1 findings
 
@@ -142,6 +142,35 @@ still need verification.
 - The running backend responds successfully to `/health` and has a MongoDB connection, but its process environment and local `.env` lack `MEDIA_S3_BUCKET` and `MEDIA_S3_REGION`. `createS3Storage` requires both before the upload-session route can succeed. No storage configuration or backend code was changed. Live upload, restart persistence, replacement, deletion, and shared remote-avatar acceptance remain blocked.
 - Merged current frontend `main` (commit `63de92b`), which independently introduced Metro host discovery and bearer-token profile loading. Reconciled its tests and retained its preference for the current Metro host over a stale configured IP. The resulting branch passes 25 Jest suites / 144 tests; iOS and Android JavaScript exports both succeeded after the merge. `npm run lint --if-present` and `npm run typecheck --if-present` perform no work because the repository has no such scripts. Existing draft frontend PR #9 remains unmerged pending live acceptance.
 - Official SDK 58 environment guidance: https://docs.expo.dev/guides/environment-variables/ . Expo's `expo-constants` `expoConfig.hostUri` is documented at https://docs.expo.dev/versions/v58.0.0/sdk/constants/ .
+
+## Day 7 continuation (12 November)
+
+- The user authorized MongoDB photo storage. A separate backend feature branch
+  adds `avatar_files` documents for validated, re-encoded JPEG bytes; users
+  retain a small `avatarFileId` pointer. Authenticated upload, metadata, image
+  read, and removal routes are implemented. MongoDB was already configured,
+  and the isolated backend process reported a healthy database connection on
+  port 5052. No Atlas browser setting or secret was changed.
+- The frontend now uses a typed MongoDB upload adapter for its 512×512 JPEG,
+  maps returned media IDs to authenticated image URLs, displays a fresh Firebase
+  token on image requests, and resolves friends' `avatarFileId` in shared
+  avatars. The prior S3 adapter remains for compatibility but is not the
+  production frontend path on this branch.
+- Backend unit and syntax checks passed (168 tests). Frontend Jest passed
+  25 suites / 149 tests. iOS, Android, and web JavaScript exports passed. No
+  lint or TypeScript check scripts are configured in the frontend repository.
+- The feature Expo app launched on the logged-in iPhone 18 Pro, loaded the
+  profile from the healthy local backend, and opened the gallery. The supplied
+  portrait appeared in Apple's picker. The computer controller could not click
+  inside that system picker (`noWindowsAvailable`), so the user was asked to
+  complete selection and save. Upload, replacement, removal, restart
+  persistence, and remote avatars are not yet device accepted. Android ADB
+  could not start in this environment. Do not merge or claim production
+  readiness until the live flow and backend deployment are verified.
+- Backend API details: `clickmate-backend/docs/mongodb-avatar-storage.md` on
+  the companion feature branch. Official references:
+  [MongoDB GridFS threshold](https://www.mongodb.com/docs/manual/core/gridfs/),
+  [Expo SDK 58 FileSystem](https://docs.expo.dev/versions/v58.0.0/sdk/filesystem/).
 
 ## References
 

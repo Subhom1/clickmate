@@ -167,7 +167,77 @@ export function createMultipartProfilePhotoApi({ request, getToken, baseUrl, Fil
   };
 }
 
-export const profilePhotoApi = createMultipartProfilePhotoApi({
+/** Uploads the processed JPEG to ClickMate, which stores its bytes in MongoDB. */
+export function createMongoProfilePhotoApi({ request, getToken, baseUrl, FileClass = File }) {
+  const authorized = async () => {
+    if (!baseUrl?.startsWith("https://") && !(__DEV__ && baseUrl?.startsWith("http://"))) {
+      throw new ProfilePhotoApiError("A secure profile photo API URL is required.");
+    }
+    const token = await getToken();
+    if (!token) throw new ProfilePhotoApiError("Please sign in to manage your photo.");
+    return { Authorization: `Bearer ${token}` };
+  };
+  const parse = avatar => {
+    if (!avatar?.mediaId || typeof avatar.mediaId !== "string" || avatar.contentType !== "image/jpeg" ||
+        !Number.isFinite(avatar.width) || avatar.width !== avatar.height) {
+      throw new ProfilePhotoApiError("The updated profile photo was not returned.");
+    }
+    return { avatarUrl: `${baseUrl}/v1/avatar-files/${encodeURIComponent(avatar.mediaId)}`, avatarMediaId: avatar.mediaId, avatarExpiresAt: null };
+  };
+  const call = async (method, path) => {
+    try {
+      const response = await request({ method, url: `${baseUrl}${path}`, headers: await authorized() });
+      return response.data;
+    } catch (error) {
+      if (error instanceof ProfilePhotoApiError) throw error;
+      const message = error?.response?.data?.message;
+      if (error?.response?.status === 503) throw new ProfilePhotoApiUnavailableError(message || "Photo service is temporarily unavailable.");
+      throw new ProfilePhotoApiError(message || "The photo request failed. Please try again.");
+    }
+  };
+  return {
+    async save(userId, photo, onProgress) {
+      if (!userId || !photo?.uri?.startsWith("file://") || photo.mimeType !== "image/jpeg" || photo.width !== 512 || photo.height !== 512) {
+        throw new ProfilePhotoApiError("The processed profile photo is invalid.");
+      }
+      const file = new FileClass(photo.uri);
+      if (!file.exists || !Number.isFinite(file.size) || file.size < 1 || file.size > MAX_PHOTO_BYTES) {
+        throw new ProfilePhotoApiError("The profile photo must be a file smaller than 2 MB.");
+      }
+      const headers = await authorized();
+      onProgress?.(0);
+      const response = await file.upload(`${baseUrl}/v1/me/avatar-file`, {
+        httpMethod: "POST", uploadType: UploadType.MULTIPART, fieldName: "file", mimeType: "image/jpeg", headers,
+        sessionType: "foreground", onProgress: ({ bytesSent, totalBytes }) => {
+          if (totalBytes > 0) onProgress?.(Math.max(0, Math.min(0.9, bytesSent / totalBytes * 0.9)));
+        },
+      });
+      if (response.status < 200 || response.status >= 300) {
+        let message;
+        try { message = JSON.parse(response.body)?.message; } catch {}
+        throw new ProfilePhotoApiError(message || "The photo transfer failed. Please try again.");
+      }
+      onProgress?.(0.9);
+      let body;
+      try { body = JSON.parse(response.body); } catch { throw new ProfilePhotoApiError("The updated profile photo was not returned."); }
+      const result = { id: userId, ...parse(body?.avatar) };
+      onProgress?.(1);
+      return result;
+    },
+    async remove(userId) {
+      if (!userId) throw new ProfilePhotoApiError("Missing user ID.");
+      const response = await call("delete", "/v1/me/avatar-file");
+      if (response?.avatar !== null) throw new ProfilePhotoApiError("Photo removal was not confirmed.");
+      return { id: userId, avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null };
+    },
+    async getProfile() {
+      const response = await call("get", "/v1/me/avatar-file");
+      return response?.avatar === null ? { avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null } : parse(response?.avatar);
+    },
+  };
+}
+
+export const profilePhotoApi = createMongoProfilePhotoApi({
   request: axios,
   getToken: () => Auth.currentUser?.getIdToken(),
   baseUrl: API_BASE_URL,

@@ -7,6 +7,7 @@ import axios from "axios";
 import { userState } from "./app/state/atoms/UserState";
 import { API_BASE_URL } from "./constant";
 import { profilePhotoApi } from "./app/profilePhoto/api";
+import { setProfilePhotoAuthUser } from "./app/profilePhoto/currentAuth";
 
 const AuthContext = createContext();
 
@@ -19,6 +20,7 @@ const AuthProvider = ({ children }) => {
     // Add listener for authentication state changes
     const subscribe = Auth.onAuthStateChanged((user) => {
       const currentRequest = ++requestId;
+      setProfilePhotoAuthUser(user);
       setUser(user);
       if (user?.uid) {
         const getUserInfo = async () => {
@@ -48,7 +50,7 @@ const AuthProvider = ({ children }) => {
     });
 
     // Clean up listener on unmount
-    return () => { requestId++; subscribe(); };
+    return () => { requestId++; setProfilePhotoAuthUser(null); subscribe(); };
   }, []);
 
   return (

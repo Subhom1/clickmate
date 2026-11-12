@@ -1,6 +1,11 @@
 import React from "react";
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
 import { InitialsCircle } from "../../app/components/CreateAvatar";
+import { API_BASE_URL } from "../../constant";
+import { setProfilePhotoAuthUser } from "../../app/profilePhoto/currentAuth";
+
+jest.mock("../../constant", () => ({ API_BASE_URL: "https://api.clickmate.test" }));
+afterEach(() => setProfilePhotoAuthUser(null));
 
 describe("InitialsCircle", () => {
   it("renders the uppercase initials for a person's name", async () => {
@@ -35,6 +40,31 @@ describe("InitialsCircle", () => {
     await render(<InitialsCircle name="Ada Lovelace" photoUri="https://example.com/avatar.jpg" styles={{}} />);
     expect(screen.getByLabelText("Ada Lovelace profile photo")).toHaveProp("source", { uri: "https://example.com/avatar.jpg" });
     expect(screen.queryByText("AL")).toBeNull();
+  });
+
+  it("sends an ID token when loading a MongoDB avatar", async () => {
+    setProfilePhotoAuthUser({ getIdToken: jest.fn().mockResolvedValue("test-token") });
+    const uri = `${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439011`;
+    await render(<InitialsCircle name="Ada" photoUri={uri} styles={{}} />);
+    await waitFor(() => expect(screen.getByLabelText("Ada profile photo")).toHaveProp("source", {
+      uri, headers: { Authorization: "Bearer test-token" },
+    }));
+    setProfilePhotoAuthUser(null);
+  });
+
+  it("keeps initials when a protected avatar has no signed-in user", async () => {
+    setProfilePhotoAuthUser(null);
+    await render(<InitialsCircle name="Ada" photoUri={`${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439011`} styles={{}} />);
+    expect(screen.getByText("A")).toBeOnTheScreen();
+  });
+
+  it("resolves a friend's MongoDB avatar ID on the shared component", async () => {
+    setProfilePhotoAuthUser({ getIdToken: jest.fn().mockResolvedValue("friend-token") });
+    await render(<InitialsCircle name="Friend" avatarFileId="507f1f77bcf86cd799439012" styles={{}} />);
+    await waitFor(() => expect(screen.getByLabelText("Friend profile photo")).toHaveProp("source", {
+      uri: `${API_BASE_URL}/v1/avatar-files/507f1f77bcf86cd799439012`,
+      headers: { Authorization: "Bearer friend-token" },
+    }));
   });
 
   it.each([

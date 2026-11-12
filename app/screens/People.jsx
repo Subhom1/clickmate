@@ -84,7 +84,7 @@ export default function People({ route }) {
                     });
                   }}
                 >
-                  <InitialsCircle name={item.fullname} photoUri={item.avatarUrl} styles={{ circle: { width: 40, height: 40, borderRadius: 20, marginRight: 12 }, initials: { fontSize: 14 } }} />
+                  <InitialsCircle name={item.fullname} photoUri={item.avatarUrl} avatarFileId={item.avatarFileId} styles={{ circle: { width: 40, height: 40, borderRadius: 20, marginRight: 12 }, initials: { fontSize: 14 } }} />
                   <Text className="text-secondary_blue_deep text-lg capitalize">
                     {item.fullname}
                   </Text>
