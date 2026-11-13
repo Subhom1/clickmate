@@ -2,7 +2,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, StatusBar, Pressable } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
+import { useAtomValue } from "jotai";
+import { userState } from "../state/atoms/UserState";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { InitialsCircle } from "../components/CreateAvatar";
@@ -11,17 +13,34 @@ export default function VisitorProfile({ route }) {
   const [visitorData, setVisitorData] = useState(null);
   const { userEmail, platform } = route.params;
   const navigation = useNavigation();
+  const userData = useAtomValue(userState);
+  const friend = userData?.friends?.find((item) => item.email === userEmail);
 
   useEffect(() => {
-    if (userEmail) {
-      axios
-        .get(`http://${IP}:5051/user/${userEmail}`)
-        .then((res) => {
-          setVisitorData(res.data);
-        })
-        .catch((e) => console.error(e, "Error message: mongodb user details"));
+    let active = true;
+    const interests = friend?.interests ?? [];
+    setVisitorData(friend ? {
+      ...friend,
+      interests: interests.filter((item) => item?.text),
+    } : null);
+
+    if (friend && interests.some((item) => !item?.text) && API_BASE_URL) {
+      axios.get(`${API_BASE_URL}/interests`).then((res) => {
+        if (!active) return;
+        const namesById = new Map(res.data.map((item) => [item._id, item]));
+        setVisitorData({
+          ...friend,
+          interests: interests.map((item) =>
+            item?.text ? item : namesById.get(typeof item === "string" ? item : item?._id)
+          ).filter(Boolean),
+        });
+      }).catch(() => {
+        // The profile remains available if interest names cannot be loaded.
+      });
     }
-  }, [userEmail]);
+
+    return () => { active = false; };
+  }, [friend, userEmail]);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
