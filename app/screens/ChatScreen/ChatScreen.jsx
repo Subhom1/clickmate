@@ -1,5 +1,5 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,6 @@ import { matchState } from "../../state/atoms/MatchState";
 import { chatState } from "../../state/atoms/ChatState";
 import { IP } from "../../../constant";
 import { useNavigation } from "@react-navigation/native";
-import Toast from "react-native-root-toast";
 const ChatScreen = ({ route }) => {
   const { platform, secondUserInfo } = route.params;
   const [messages, setMessages] = useState([]);
@@ -29,6 +28,8 @@ const ChatScreen = ({ route }) => {
   const [matchUser, setMatchUser] = useAtom(matchState);
   const setUserMongoData = useSetAtom(userState);
   const [socket, setSocket] = useState(null);
+  const [showClearNotice, setShowClearNotice] = useState(false);
+  const clearNoticeTimer = useRef(null);
   const navigation = useNavigation();
   const secondUser = secondUserInfo ? secondUserInfo : matchUser?.user;
 
@@ -70,20 +71,13 @@ const ChatScreen = ({ route }) => {
     };
     getChats();
     newSocket.on("messagesCleared", () => {
-      // Add a Toast on screen.
-      let toast = Toast.show("All chats cleared", {
-        duration: Toast.durations.LONG,
-        shadow: false,
-        position: 0,
-        opacity: 0.6
-      });
-      // You can manually hide the Toast, or it will automatically disappear after a `duration` ms timeout.
-      setTimeout(() => {
-        Toast.hide(toast);
-      }, 5000);
-      getChats()
+      setShowClearNotice(true);
+      if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
+      clearNoticeTimer.current = setTimeout(() => setShowClearNotice(false), 3500);
+      getChats();
     });
     return () => {
+      if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
       const getUserInfo = async () => {
         await axios
           .get(`http://${IP}:5051/user/${userData?.email}`)
@@ -148,6 +142,11 @@ const ChatScreen = ({ route }) => {
           <MessageInputBox addNewMessage={(txt) => sendMessge(txt)} />
         </View>
       </KeyboardAvoidingView>
+      {showClearNotice && (
+        <View style={styles.clearNotice} pointerEvents="none">
+          <Text style={styles.clearNoticeText}>All chats cleared</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -159,6 +158,18 @@ const styles = StyleSheet.create({
   },
   bottom: {
     justifyContent: "flex-end",
+  },
+  clearNotice: {
+    position: "absolute",
+    alignSelf: "center",
+    top: "50%",
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  clearNoticeText: {
+    color: "#fff",
+    fontSize: 16,
   },
 });
 export default ChatScreen;

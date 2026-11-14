@@ -18,7 +18,6 @@ jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigati
 jest.mock("socket.io-client", () => jest.fn());
 jest.mock("axios", () => ({ get: jest.fn(), post: jest.fn() }));
 jest.mock("../../constant", () => ({ IP: "localhost" }));
-jest.mock("react-native-root-toast", () => ({ show: jest.fn(), hide: jest.fn(), durations: { LONG: 3000 } }));
 jest.mock("@expo/vector-icons/MaterialIcons", () => {
   const React = require("react");
   const { Text } = require("react-native");

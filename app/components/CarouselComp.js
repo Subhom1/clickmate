@@ -2,42 +2,44 @@ import {
   StyleSheet,
   Text,
   View,
-  ImageBackground,
-  Pressable, Platform
+  Image,
+  FlatList,
+  Pressable,
+  Platform,
 } from "react-native";
 import React from "react";
-import { Carousel } from "react-native-reanimated-carousel";
 import { IP } from "../../constant";
-const CarouselComp = ({ width, dataArr, onPress, itemMain, platform }) => {
+const CarouselComp = ({ width, dataArr, onPress, itemMain }) => {
   return (
-    <Carousel
-      orientation="horizontal"
-      itemSize={width * 0.7}
-      loop={false}
-      style={{ width: "100%", height: width / 2.3 }}
+    <FlatList
+      testID="activity-carousel"
+      horizontal
       data={dataArr}
-      snapMode="page"
-      onSnapToItem={(index) => console.log("current index:", index)}
-      renderItem={({ item, index }) => (
+      style={{ width: "100%", height: width / 2.3 }}
+      snapToInterval={width * 0.7}
+      decelerationRate="fast"
+      showsHorizontalScrollIndicator={false}
+      keyExtractor={(item, index) => `${item.imgUrl}-${index}`}
+      renderItem={({ item }) => (
         <Pressable
-          style={styles.carouselItemContainer}
+          style={[styles.carouselItemContainer, { width: width * 0.7 - 15 }]}
           onPress={() => {
             onPress(item, itemMain);
           }}
         >
-          {/* ImageBackground allows us to put an overlay and content over the image */}
-          <ImageBackground
-            source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
-            style={styles.image}
-            imageStyle={styles.imageBorderRadius}
-          >
-            {/* Overlay */}
+          <View style={styles.image}>
+            <Image
+              testID="activity-image"
+              source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
+              style={styles.backgroundImage}
+              resizeMode="cover"
+            />
             <View style={styles.overlay}>
               <Text className="text-white font-semibold text-lg items-end pb-3 pl-3 capitalize">
                 {item.text}
               </Text>
             </View>
-          </ImageBackground>
+          </View>
         </Pressable>
       )}
     />
@@ -62,9 +64,11 @@ const styles = StyleSheet.create({
   image: {
     height: "100%",
     width: "100%",
+    borderRadius: 22,
+    overflow: "hidden",
   },
-  imageBorderRadius: {
-    borderRadius: 22, // Border radius for the image
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
   },
   overlay: {
     flex: 1,

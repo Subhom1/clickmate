@@ -4,7 +4,7 @@ import {
   Text,
   StatusBar,
   StyleSheet,
-  ImageBackground,
+  Image,
   TouchableOpacity,
   Pressable,
   Alert,
@@ -104,17 +104,18 @@ export default function ExploreSearch({ route }) {
 
         <View className="mt-32">
           <View style={styles.carouselItemContainer}>
-            <ImageBackground
-              source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
-              style={styles.image}
-              imageStyle={styles.imageBorderRadius}
-            >
+            <View style={styles.image}>
+              <Image
+                source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+              />
               <View style={styles.overlay}>
                 <Text className="text-white font-semibold text-lg items-end pb-3 pl-3 capitalize">
                   {item?.text}
                 </Text>
               </View>
-            </ImageBackground>
+            </View>
           </View>
           {!noResult ? (
             <Text className="my-5 text-center text-sm font-medium">
@@ -150,9 +151,11 @@ const styles = StyleSheet.create({
   image: {
     height: "100%",
     width: "100%",
+    borderRadius: 22,
+    overflow: "hidden",
   },
-  imageBorderRadius: {
-    borderRadius: 22, // Border radius for the image
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
   },
   overlay: {
     flex: 1,

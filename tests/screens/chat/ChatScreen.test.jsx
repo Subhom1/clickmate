@@ -2,7 +2,6 @@ import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Provider, createStore } from "jotai";
 import axios from "axios";
-import Toast from "react-native-root-toast";
 import ChatScreen from "../../../app/screens/ChatScreen/ChatScreen";
 import { userState } from "../../../app/state/atoms/UserState";
 import { matchState } from "../../../app/state/atoms/MatchState";
@@ -15,11 +14,6 @@ jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigati
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
 jest.mock("../../../constant", () => ({ IP: "localhost" }));
-jest.mock("react-native-root-toast", () => ({
-  show: jest.fn(() => "toast-1"),
-  hide: jest.fn(),
-  durations: { LONG: 3000 },
-}));
 jest.mock("@expo/vector-icons/MaterialIcons", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -190,11 +184,11 @@ describe("ChatScreen", () => {
 
     await waitFor(() => expect(screen.queryByText("Old history")).toBeNull());
     expect(axios.get).toHaveBeenCalledTimes(2);
-    expect(Toast.show).toHaveBeenCalledWith("All chats cleared", expect.objectContaining({ duration: 3000 }));
-    await act(async () => jest.advanceTimersByTime(4999));
-    expect(Toast.hide).not.toHaveBeenCalled();
+    expect(screen.getByText("All chats cleared")).toBeOnTheScreen();
+    await act(async () => jest.advanceTimersByTime(3499));
+    expect(screen.getByText("All chats cleared")).toBeOnTheScreen();
     await act(async () => jest.advanceTimersByTime(1));
-    expect(Toast.hide).toHaveBeenCalledWith("toast-1");
+    expect(screen.queryByText("All chats cleared")).toBeNull();
   });
 
 });
