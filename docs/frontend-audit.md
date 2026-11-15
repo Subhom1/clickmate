@@ -12,6 +12,7 @@ Reviewed the Expo app entry point, authentication, navigation, every screen and 
 - Share email validation between Login and Sign Up and category labels between Explore and ExploreSearch.
 - Remove unused keyboard state/listeners from the message input and remove the message list's own listener on unmount.
 - Initialize Firebase with the browser auth API on web; the previous native persistence call crashed before any screen appeared.
+- Remove the unused `RootSiblingParent` wrapper. Its package was absent from the manifest and broke clean-install CI.
 
 ## Remaining work, by priority
 

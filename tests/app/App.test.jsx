@@ -21,9 +21,6 @@ jest.mock("../../_layout", () => {
       React.createElement(Text, null, `${user.uid}:${platform}`),
   };
 });
-jest.mock("react-native-root-siblings", () => ({
-  RootSiblingParent: ({ children }) => children,
-}));
 jest.mock("react-native-gesture-handler", () => {
   const React = require("react");
   const { View } = require("react-native");
