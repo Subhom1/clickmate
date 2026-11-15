@@ -8,8 +8,10 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Alert,
+  Keyboard,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import KeyboardDismissScrollView from "../components/KeyboardDismissScrollView";
 import Icon from "@expo/vector-icons/FontAwesome5";
 import Icon2 from "@expo/vector-icons/Feather";
 import { createAuthenticatedSocket } from "../network/socket";
@@ -86,6 +88,7 @@ export default function Home({ route }) {
       Alert.alert("Connection unavailable", "Please try again in a moment");
       return;
     }
+    Keyboard.dismiss();
     setSearchLoading(true);
     setNoResult(false);
     if (noResultTimerRef.current) {
@@ -111,86 +114,90 @@ export default function Home({ route }) {
   return (
     <SafeAreaView className="flex-1  bg-white">
       <StatusBar style="auto" />
-      <View className={`${platform == "ios" ? "mt-9" : "mt-16"} mx-7`}>
-        <Text className="text-left text-4xl font-bold text-primary_green">
-          Search for Your
-        </Text>
-        <Text className="text-left text-4xl font-bold text-black">
-          new journey <Icon name="location-arrow" size={25} color="#000" />
-        </Text>
-        <Text className="my-5 text-gray-500">
-          New in town?{"\n"}
-          Be it a Friendship or Relationship that you are looking for or Just
-          wanna chat with someone globally.
-        </Text>
-        <ToggleSwitch />
-        <View className="flex-row flex-wrap mt-5">
-          {tags.map((item, index) => (
-            <Pressable onPress={() => setSearchText(item)} key={index}>
-              <Text className="text-secondary_blue_deep px-2 py-2  bg-blue-100 mb-1 mr-1">
-                # {item}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <View className="h-9 my-2">
-          {noResult && (
-            <Text className="text-primary_red text-xs font-medium">
-              No Users found,{"\n"}
-              Try to be more specific about your search.
-            </Text>
-          )}
-        </View>
-        <KeyboardAvoidingView
-          behavior={platform === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={platform == "ios" ? 90 : 70}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={platform === "ios" ? "padding" : undefined}
+      >
+        <KeyboardDismissScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         >
-          <TextInput
-            placeholder="Type your current mood"
-            className="border rounded-3xl p-5 text-gray-500 border-primary_green_light font-roboto"
-            onChangeText={(txt) => setSearchText(txt)}
-            autoCapitalize="none"
-            value={searchText}
-            multiline={true}
-            maxLength={400}
-            style={{ maxHeight: 125 }}
-          />
-          <Text className="text-primary_blue text-xs mt-3">
-            <Icon2 name="info" style={{ margin: 10 }} /> The more descriptive
-            your query, the more accurate the result will be.
-          </Text>
-        </KeyboardAvoidingView>
+          <View className={`${platform == "ios" ? "mt-9" : "mt-16"} mx-7`}>
+            <Text className="text-left text-4xl font-bold text-primary_green">
+              Search for Your
+            </Text>
+            <Text className="text-left text-4xl font-bold text-black">
+              new journey <Icon name="location-arrow" size={25} color="#000" />
+            </Text>
+            <Text className="my-5 text-gray-500">
+              New in town?{"\n"}
+              Be it a Friendship or Relationship that you are looking for or Just
+              wanna chat with someone globally.
+            </Text>
+            <ToggleSwitch />
+            <View className="flex-row flex-wrap mt-5">
+              {tags.map((item, index) => (
+                <Pressable onPress={() => setSearchText(item)} key={index}>
+                  <Text className="text-secondary_blue_deep px-2 py-2  bg-blue-100 mb-1 mr-1">
+                    # {item}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <View className="h-9 my-2">
+              {noResult && (
+                <Text className="text-primary_red text-xs font-medium">
+                  No Users found,{"\n"}
+                  Try to be more specific about your search.
+                </Text>
+              )}
+            </View>
+            <TextInput
+              placeholder="Type your current mood"
+              className="border rounded-3xl p-5 text-gray-500 border-primary_green_light font-roboto"
+              onChangeText={(txt) => setSearchText(txt)}
+              autoCapitalize="none"
+              value={searchText}
+              multiline={true}
+              maxLength={400}
+              style={{ maxHeight: 125 }}
+            />
+            <Text className="text-primary_blue text-xs mt-3">
+              <Icon2 name="info" style={{ margin: 10 }} /> The more descriptive
+              your query, the more accurate the result will be.
+            </Text>
 
-        <View className="flex-row justify-evenly">
-          {/* {!searchLoading && ( */}
-          <TouchableOpacity
-            className={`${
-              searchLoading ? "bg-primary_gray" : "bg-primary_green"
-            } mt-5 rounded-3xl w-32 py-3 self-center`}
-            onPress={handleSearch}
-            disabled={searchLoading}
-          >
-            {searchLoading ? (
-              <Text className="text-center text-sm text-white">
-                Searching . . .
-              </Text>
-            ) : (
-              <Text className="text-center text-sm text-white">Search</Text>
-            )}
-          </TouchableOpacity>
-          {/* )} */}
-          {searchLoading && (
-            <TouchableOpacity
-              className={`mt-5 rounded-3xl w-32 py-3 self-center ${
-                false ? "bg-primary_gray" : "bg-primary_red"
-              }`}
-              onPress={handleCancelSearch}
-            >
-              <Text className="text-center text-sm text-white">Cancel</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+            <View className="flex-row justify-evenly">
+              {/* {!searchLoading && ( */}
+              <TouchableOpacity
+                className={`${
+                  searchLoading ? "bg-primary_gray" : "bg-primary_green"
+                } mt-5 rounded-3xl w-32 py-3 self-center`}
+                onPress={handleSearch}
+                disabled={searchLoading}
+              >
+                {searchLoading ? (
+                  <Text className="text-center text-sm text-white">
+                    Searching . . .
+                  </Text>
+                ) : (
+                  <Text className="text-center text-sm text-white">Search</Text>
+                )}
+              </TouchableOpacity>
+              {/* )} */}
+              {searchLoading && (
+                <TouchableOpacity
+                  className={`mt-5 rounded-3xl w-32 py-3 self-center ${
+                    false ? "bg-primary_gray" : "bg-primary_red"
+                  }`}
+                  onPress={handleCancelSearch}
+                >
+                  <Text className="text-center text-sm text-white">Cancel</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </KeyboardDismissScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

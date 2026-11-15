@@ -1,6 +1,6 @@
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { Alert, Text } from "react-native";
+import { Alert, Keyboard, Text } from "react-native";
 import { Provider, createStore, useAtomValue } from "jotai";
 import Home from "../../../app/screens/Home";
 import { userState } from "../../../app/state/atoms/UserState";
@@ -82,6 +82,29 @@ describe("Home search", () => {
     await fireEvent.press(screen.getByText("Cancel"));
     expect(mockSocket.emit).toHaveBeenCalledWith("cancel_search", { userId: "me-1" });
     expect(screen.getByText("Search")).toBeOnTheScreen();
+  });
+
+  it("submits from a focused input and dismisses the keyboard", async () => {
+    const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    await renderHome();
+
+    const input = screen.getByPlaceholderText("Type your current mood");
+    await fireEvent(input, "focus");
+    await fireEvent.changeText(input, "coffee meetup");
+    await fireEvent.press(screen.getByText("Search"));
+
+    expect(dismiss).toHaveBeenCalledTimes(1);
+    expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {
+      userId: "me-1",
+      query: "coffee meetup",
+    });
+  });
+
+  it("dismisses the keyboard when the page is tapped outside an input or dragged", async () => {
+    await renderHome();
+    const scroll = screen.getByTestId("keyboard-dismiss-scroll");
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
   });
 
   it("reports unavailable socket connections", async () => {

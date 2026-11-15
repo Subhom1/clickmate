@@ -1,7 +1,6 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
 import { Provider } from "jotai";
-import { Keyboard } from "react-native";
 import { RootLayout } from "../../_layout";
 
 jest.mock("@react-navigation/native", () => {
@@ -33,7 +32,7 @@ jest.mock("@react-navigation/bottom-tabs", () => {
   return {
     createBottomTabNavigator: () => ({
       Navigator: ({ children, screenOptions }) =>
-        React.createElement(View, { testID: "tab-bar", style: screenOptions.tabBarStyle }, children),
+        React.createElement(View, { testID: "tab-bar", style: screenOptions.tabBarStyle, tabBarHideOnKeyboard: screenOptions.tabBarHideOnKeyboard }, children),
       Screen: ({ name, initialParams }) =>
         React.createElement(Text, null, `${name}:${initialParams?.platform}`),
     }),
@@ -112,26 +111,13 @@ describe("RootLayout session and keyboard transitions", () => {
   });
 
   it.each([
-    ["android", 75, -280],
-    ["ios", 90, 0],
-  ])("handles the %s keyboard and releases listeners on exit", async (platform, height, bottom) => {
-    const listeners = {};
-    const removals = [];
-    jest.spyOn(Keyboard, "addListener").mockImplementation((event, callback) => {
-      listeners[event] = callback;
-      const remove = jest.fn();
-      removals.push(remove);
-      return { remove };
-    });
+    ["android", 75],
+    ["ios", 90],
+  ])("lets navigation hide the %s tab bar while the keyboard is open", async (platform, height) => {
     const user = { stsTokenManager: { expirationTime: Date.now() + 60_000 } };
-    const view = await render(<Provider><RootLayout user={user} platform={platform} /></Provider>);
-    expect(screen.getByTestId("tab-bar")).toHaveStyle({ height, bottom: 0 });
-    await act(() => listeners.keyboardDidShow({ endCoordinates: { height: 280 } }));
-    expect(screen.getByTestId("tab-bar")).toHaveStyle({ bottom });
-    await act(() => listeners.keyboardDidHide());
-    expect(screen.getByTestId("tab-bar")).toHaveStyle({ bottom: 0 });
-    await view.unmount();
-    expect(removals).toHaveLength(2);
-    removals.forEach(remove => expect(remove).toHaveBeenCalledTimes(1));
+    await renderLayout(user, platform);
+    const tabBar = screen.getByTestId("tab-bar");
+    expect(tabBar).toHaveStyle({ height, bottom: 0 });
+    expect(tabBar.props.tabBarHideOnKeyboard).toBe(true);
   });
 });
