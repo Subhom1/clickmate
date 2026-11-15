@@ -97,7 +97,7 @@ it("carries a discovered match into chat history, sending, and incoming avatars"
   });
   await act(async () => chatSocket.serverEmit("receiveMessage", { sender: "friend-1", content: "See you there" }));
   expect(screen.getByText("See you there")).toBeOnTheScreen();
-  expect(screen.getAllByText("AF")).toHaveLength(2);
+  expect(screen.getAllByLabelText("View Alex Friend profile")).toHaveLength(3);
   await unmount();
   expect(chatSocket.disconnect).toHaveBeenCalledTimes(1);
 });

@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from "react";
-import { View, StyleSheet, Text, Keyboard } from "react-native";
+import { View, StyleSheet, Text, Keyboard, Pressable } from "react-native";
 import { InitialsCircle } from "../../components/CreateAvatar";
 import KeyboardDismissScrollView from "../../components/KeyboardDismissScrollView";
 
-const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) => {
+const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId, onProfilePress }) => {
   const scrollViewRef = useRef();
 
   const goToBottomList = () => {
@@ -24,13 +24,13 @@ const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) =>
     >
       {messagesHistory &&
         messagesHistory.map((message, index) => (
-          <Message key={index} {...{ message }} fullName={fullName} avatarUrl={avatarUrl} avatarFileId={avatarFileId} />
+          <Message key={index} {...{ message }} fullName={fullName} avatarUrl={avatarUrl} avatarFileId={avatarFileId} onProfilePress={onProfilePress} />
         ))}
     </KeyboardDismissScrollView>
   );
 };
 
-const Message = ({ message, fullName, avatarUrl, avatarFileId }) => {
+const Message = ({ message, fullName, avatarUrl, avatarFileId, onProfilePress }) => {
   return (
     <View
       style={[
@@ -41,7 +41,14 @@ const Message = ({ message, fullName, avatarUrl, avatarFileId }) => {
       ]}
     >
       {message.from !== "2" ? (
-        <InitialsCircle name={fullName} photoUri={avatarUrl} avatarFileId={avatarFileId} styles={styles} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`View ${fullName || "user"} profile`}
+          disabled={!onProfilePress}
+          onPress={onProfilePress}
+        >
+          <InitialsCircle name={fullName} photoUri={avatarUrl} avatarFileId={avatarFileId} styles={styles} />
+        </Pressable>
       ) : null}
       <View
         style={[

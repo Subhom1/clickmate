@@ -31,6 +31,15 @@ const ChatScreen = ({ route }) => {
   const clearNoticeTimer = useRef(null);
   const navigation = useNavigation();
   const secondUser = secondUserInfo ? secondUserInfo : matchUser?.user;
+  const openProfile = () => {
+    if (!secondUser?._id && !secondUser?.email) return;
+    navigation.navigate("VisitorProfile", {
+      userId: secondUser._id,
+      userEmail: secondUser.email,
+      platform,
+    });
+  };
+  const onProfilePress = secondUser?._id || secondUser?.email ? openProfile : undefined;
 
   useEffect(() => {
     const newSocket = createAuthenticatedSocket();
@@ -130,6 +139,9 @@ const ChatScreen = ({ route }) => {
             clearMessage();
           }}
           fullName={secondUser?.fullname}
+          avatarUrl={secondUser?.avatarUrl}
+          avatarFileId={secondUser?.avatarFileId}
+          onProfilePress={onProfilePress}
           platform={platform}
         />
         <MessagesList
@@ -137,6 +149,7 @@ const ChatScreen = ({ route }) => {
           avatarFileId={secondUser?.avatarFileId}
           messagesHistory={messages}
           fullName={secondUser?.fullname}
+          onProfilePress={onProfilePress}
         />
         <View style={styles.bottom}>
           <MessageInputBox addNewMessage={(txt) => sendMessge(txt)} />

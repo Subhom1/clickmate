@@ -12,11 +12,12 @@ import { useFreshFriends } from "../hooks/useFreshFriends";
 
 export default function VisitorProfile({ route }) {
   const [interestNamesById, setInterestNamesById] = useState(new Map());
-  const { userEmail, platform } = route.params;
+  const { userId, userEmail, platform } = route.params;
   const navigation = useNavigation();
   const userData = useAtomValue(userState);
-  const { refreshing, refreshError } = useFreshFriends(userData?._id, userEmail);
-  const friend = userData?.friends?.find((item) => item.email === userEmail);
+  const { refreshing, refreshError } = useFreshFriends(userData?._id, userId ?? userEmail);
+  const friend = userData?.friends?.find((item) =>
+    userId ? item._id === userId : item.email === userEmail);
   const interests = friend?.interests ?? [];
   const visitorData = friend ? {
     ...friend,
