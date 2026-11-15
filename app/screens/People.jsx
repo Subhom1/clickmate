@@ -16,11 +16,13 @@ import { authenticatedHeaders } from "../network/auth";
 import axios from "axios";
 import { API_BASE_URL } from "../../constant";
 import { InitialsCircle } from "../components/CreateAvatar";
+import { useFreshFriends } from "../hooks/useFreshFriends";
 
 export default function People({ route }) {
   const userData = useAtomValue(userState);
   const [userUnreadArr, setUserUnreadArr] = useState(null);
   const navigation = useNavigation();
+  useFreshFriends(userData?._id);
   useEffect(() => {
     let active = true;
     setUserUnreadArr(null);
