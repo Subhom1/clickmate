@@ -11,7 +11,8 @@ import { useAtomValue } from "jotai";
 import { userState } from "../state/atoms/UserState";
 import Icon from "@expo/vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
-import io from "socket.io-client";
+import { createAuthenticatedSocket } from "../network/socket";
+import { authenticatedHeaders } from "../network/auth";
 import axios from "axios";
 import { API_BASE_URL } from "../../constant";
 import { InitialsCircle } from "../components/CreateAvatar";
@@ -23,15 +24,16 @@ export default function People({ route }) {
   useEffect(() => {
     let active = true;
     setUserUnreadArr(null);
-    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
+    const newSocket = createAuthenticatedSocket();
     const getUnreadMsgs = async () => {
       if (!userData?._id) return;
-      await axios
-        .get(`${API_BASE_URL}/unread-messages/${userData?._id}`)
-        .then((res) => {
-          if (active) setUserUnreadArr(res.data);
-        })
-        .catch((e) => console.error(e));
+      try {
+        const headers = await authenticatedHeaders();
+        const res = await axios.get(`${API_BASE_URL}/unread-messages/${userData._id}`, { headers });
+        if (active) setUserUnreadArr(res.data);
+      } catch (error) {
+        console.error(error);
+      }
     };
     // Listen for updates to unread counts
     newSocket.on("updateUnreadCounts", () => {

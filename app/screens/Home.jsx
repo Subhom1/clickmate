@@ -12,12 +12,11 @@ import {
 import { StatusBar } from "expo-status-bar";
 import Icon from "@expo/vector-icons/FontAwesome5";
 import Icon2 from "@expo/vector-icons/Feather";
-import io from "socket.io-client";
+import { createAuthenticatedSocket } from "../network/socket";
 import { userState } from "../state/atoms/UserState";
 import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
-import { API_BASE_URL } from "../../constant";
 import ToggleSwitch from "../components/ToggleSwitch.js";
 
 export default function Home({ route }) {
@@ -32,7 +31,7 @@ export default function Home({ route }) {
   const { platform } = route.params;
 
   useEffect(() => {
-    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
+    const newSocket = createAuthenticatedSocket();
 
     setSocket(newSocket);
     newSocket.on("connect", () => {

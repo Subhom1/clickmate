@@ -13,6 +13,7 @@ let mockSocket;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
+jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
 jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("@expo/vector-icons/MaterialIcons", () => {
   const React = require("react");
@@ -107,7 +108,7 @@ describe("ChatScreen", () => {
     expect(mockSocket.off).toHaveBeenCalledWith("receiveMessage");
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
     await waitFor(() =>
-      expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/user/me@example.com")
+      expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/user/me@example.com", { headers: { Authorization: "Bearer test-token" } })
     );
   });
 

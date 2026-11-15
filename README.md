@@ -179,6 +179,13 @@ The mobile application connects to an external Node.js backend server, which run
 
 ### WebSocket (Socket.io) Event Handlers
 
+The backend requires the signed-in user's Firebase ID token in the Socket.IO
+`auth.token` handshake. The client requests a fresh token for each connection
+and reconnection. Chat creation, chat history, and unread-count HTTP requests
+send the same token as a `Bearer` authorization header. If search reports a
+connection problem, check that the backend `/health` endpoint is reachable from
+the device and that the signed-in user has a backend profile.
+
 The application exchanges real-time data with the backend using the following WebSocket events:
 
 #### Outbound Client Events (Emitted by Client):

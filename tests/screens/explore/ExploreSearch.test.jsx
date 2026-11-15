@@ -12,6 +12,7 @@ const mockNavigation = { navigate: jest.fn(), goBack: jest.fn() };
 let mockSocket;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
+jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
 jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("@expo/vector-icons/MaterialIcons", () => {
   const React = require("react");
@@ -56,7 +57,7 @@ afterEach(() => jest.restoreAllMocks());
 describe("ExploreSearch", () => {
   it("submits a search when the socket connects", async () => {
     await renderSearch();
-    await waitFor(() => expect(io).toHaveBeenCalledWith("http://localhost:5051", { reconnectionAttempts: 5 }));
+    await waitFor(() => expect(io).toHaveBeenCalledWith("http://localhost:5051", { reconnectionAttempts: 5, auth: expect.any(Function) }));
 
     await act(async () => mockSocket.serverEmit("connect"));
     expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {

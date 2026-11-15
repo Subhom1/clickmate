@@ -11,6 +11,7 @@ import { chatState } from "../../../app/state/atoms/ChatState";
 const mockNavigation = { navigate: jest.fn() };
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("axios", () => ({ post: jest.fn() }));
+jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
 jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 
 beforeEach(() => {
@@ -47,7 +48,7 @@ describe("Result", () => {
       expect(axios.post).toHaveBeenCalledWith("http://localhost:5051/create-chat", {
         user1Id: "me-1",
         user2Id: "friend-1",
-      })
+      }, { headers: { Authorization: "Bearer test-token" } })
     );
     expect(store.get(chatState)).toBe("chat-1");
     expect(mockNavigation.navigate).toHaveBeenCalledWith("ChatScreen", { platform: "ios" });
