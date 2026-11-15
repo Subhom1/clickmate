@@ -1,5 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Keyboard } from "react-native";
 import Header from "../../../app/screens/ChatScreen/Header";
 import MessageInputBox from "../../../app/screens/ChatScreen/MessageInputBox";
 import MessagesList from "../../../app/screens/ChatScreen/MessagesList";
@@ -50,6 +51,18 @@ describe("Chat components", () => {
     expect(screen.getByText("Hi from Alex")).toBeOnTheScreen();
     expect(screen.getByText("Hi from me")).toBeOnTheScreen();
     expect(screen.getByText("AF")).toBeOnTheScreen();
+  });
+
+  it("removes its keyboard listener when the message list closes", async () => {
+    const remove = jest.fn();
+    const addListener = jest.spyOn(Keyboard, "addListener")
+      .mockReturnValue({ remove });
+    const view = await render(<MessagesList fullName="Alex Friend" messagesHistory={[]} />);
+
+    expect(addListener).toHaveBeenCalledWith("keyboardDidShow", expect.any(Function));
+    await view.unmount();
+    expect(remove).toHaveBeenCalledTimes(1);
+    addListener.mockRestore();
   });
 
   it("sends successive drafts independently without reusing the previous message", async () => {

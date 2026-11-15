@@ -1,34 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
   TextInput,
   Text,
-  Keyboard,
   Pressable,
 } from "react-native";
 
 const MessageInputBox = ({ addNewMessage }) => {
-  const [keyboardOpened, setKeyboardOpened] = useState(false);
   const [newMessage, setNewMessage] = useState("");
 
   const sendMessage = () => {
     addNewMessage(newMessage);
     setNewMessage("");
   };
-
-  useEffect(() => {
-    Keyboard.addListener("keyboardWillShow", () => setKeyboardOpened(true));
-    Keyboard.addListener("keyboardWillHide", () => setKeyboardOpened(false));
-    return () => {
-      Keyboard.removeAllListeners("keyboardWillShow", () =>
-        setKeyboardOpened(true)
-      );
-      Keyboard.removeAllListeners("keyboardWillHide", () =>
-        setKeyboardOpened(false)
-      );
-    };
-  }, []);
 
   return (
     <View style={styles.root}>

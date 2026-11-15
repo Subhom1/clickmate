@@ -1,5 +1,5 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import React from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
@@ -12,11 +12,11 @@ import {
 import Checkbox from "expo-checkbox";
 import Icon from "@expo/vector-icons/Octicons";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { signInWithEmailAndPassword, GoogleAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
 import { useNavigation } from "@react-navigation/native";
-import * as WebBrowser from "expo-web-browser";
+import { isValidEmail } from "../utils/validation";
+
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -26,14 +26,10 @@ export default function Login() {
   const [invalidMail, setInvalidMail] = useState(false);
   const navigation = useNavigation();
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
   const checkIsValid = () => {
     if (!email || !password) {
       setError(true);
-    } else if (!validateEmail(email)) {
+    } else if (!isValidEmail(email)) {
       setInvalidMail(true);
     } else {
       setInvalidMail(false);
@@ -86,7 +82,7 @@ export default function Login() {
               placeholder="Enter your email"
               className={inputFieldCSS}
               onChangeText={(emailtxt) => {
-                setInvalidMail(!validateEmail(emailtxt));
+                setInvalidMail(!isValidEmail(emailtxt));
                 setEmail(emailtxt);
               }}
               autoCapitalize="none"

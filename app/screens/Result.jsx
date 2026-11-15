@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 import { InitialsCircle } from "../components/CreateAvatar";
 
 export default function Result({ route }) {
@@ -32,7 +32,7 @@ export default function Result({ route }) {
     }
 
     await axios
-      .post(`http://${IP}:5051/create-chat`, {
+      .post(`${API_BASE_URL}/create-chat`, {
         user1Id: userData._id,
         user2Id: matchedUser._id,
       })

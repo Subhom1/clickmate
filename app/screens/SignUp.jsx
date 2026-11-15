@@ -1,5 +1,5 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Text,
   View,
@@ -8,20 +8,13 @@ import {
   StyleSheet,
   ScrollView,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
-import * as WebBrowser from "expo-web-browser";
-import Checkbox from "expo-checkbox";
 import Icon from "@expo/vector-icons/Octicons";
-import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { useFonts } from "expo-font";
-import { ActivityIndicator } from "react-native";
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-} from "firebase/auth";
+import { useNavigation } from "@react-navigation/native";
+import { isValidEmail } from "../utils/validation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { Auth } from "../../FirebaseConfig";
-import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { userState } from "../state/atoms/UserState";
 import { useSetAtom } from "jotai";
@@ -49,10 +42,6 @@ export default function Signup({ route }) {
       subscription.remove();
     };
   }, []);
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
   const signUpEmailPw = async () => {
     if (!error) {
       setLoading(true);
@@ -75,7 +64,7 @@ export default function Signup({ route }) {
   const checkIsValid = () => {
     if (!name || !email || !password || password !== confirmpassword) {
       setError(true);
-    } else if (!validateEmail(email)) {
+    } else if (!isValidEmail(email)) {
       setInvalidMail(true);
     } else if (password.length < 6) {
       setPassLengthErr(true);
@@ -168,7 +157,7 @@ export default function Signup({ route }) {
               placeholder="Enter your email"
               className={inputFieldCSS}
               onChangeText={(emailtxt) => {
-                setInvalidMail(!validateEmail(emailtxt));
+                setInvalidMail(!isValidEmail(emailtxt));
                 setEmail(emailtxt);
               }}
               autoCapitalize="none"

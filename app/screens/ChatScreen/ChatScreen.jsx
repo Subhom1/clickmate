@@ -3,8 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   StyleSheet,
 } from "react-native";
@@ -18,7 +16,7 @@ import axios from "axios";
 import { userState } from "../../state/atoms/UserState";
 import { matchState } from "../../state/atoms/MatchState";
 import { chatState } from "../../state/atoms/ChatState";
-import { IP } from "../../../constant";
+import { API_BASE_URL } from "../../../constant";
 import { useNavigation } from "@react-navigation/native";
 const ChatScreen = ({ route }) => {
   const { platform, secondUserInfo } = route.params;
@@ -34,7 +32,7 @@ const ChatScreen = ({ route }) => {
   const secondUser = secondUserInfo ? secondUserInfo : matchUser?.user;
 
   useEffect(() => {
-    const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
     setSocket(newSocket);
     newSocket.on("receiveMessage", (data) => {
       const newData = {
@@ -51,7 +49,7 @@ const ChatScreen = ({ route }) => {
     if (!userData || !secondUser) return;
     const getChats = async () => {
       await axios
-        .get(`http://${IP}:5051/chat/${userData?._id}/${secondUser?._id}`)
+        .get(`${API_BASE_URL}/chat/${userData?._id}/${secondUser?._id}`)
         .then((res) => {
           setChatId(res?.data?._id);
           newSocket.emit("joinChat", { chatId: res?.data?._id });
@@ -80,7 +78,7 @@ const ChatScreen = ({ route }) => {
       if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
       const getUserInfo = async () => {
         await axios
-          .get(`http://${IP}:5051/user/${userData?.email}`)
+          .get(`${API_BASE_URL}/user/${userData?.email}`)
           .then((res) => {
             setUserMongoData(res.data);
           })

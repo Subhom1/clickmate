@@ -17,7 +17,7 @@ import { userState } from "../state/atoms/UserState";
 import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 import ToggleSwitch from "../components/ToggleSwitch.js";
 
 export default function Home({ route }) {
@@ -32,7 +32,7 @@ export default function Home({ route }) {
   const { platform } = route.params;
 
   useEffect(() => {
-    const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
 
     setSocket(newSocket);
     newSocket.on("connect", () => {

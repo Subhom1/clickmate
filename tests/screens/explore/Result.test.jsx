@@ -11,7 +11,7 @@ import { chatState } from "../../../app/state/atoms/ChatState";
 const mockNavigation = { navigate: jest.fn() };
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("axios", () => ({ post: jest.fn() }));
-jest.mock("../../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 
 beforeEach(() => {
   jest.clearAllMocks();
