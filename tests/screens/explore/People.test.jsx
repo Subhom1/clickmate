@@ -9,7 +9,10 @@ import { createSocketMock } from "../../mocks/socket";
 
 const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
-jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
+jest.mock("@react-navigation/native", () => ({
+  useNavigation: () => mockNavigation,
+  useFocusEffect: (callback) => require("react").useEffect(callback, [callback]),
+}));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
 jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
@@ -26,6 +29,11 @@ beforeEach(() => {
 });
 
 const friends = [{ _id: "friend-1", fullname: "Alex Friend", email: "alex@example.com" }];
+const mockResponses = (unread = [], refreshedFriends = friends) => {
+  axios.get.mockImplementation((url) => Promise.resolve({
+    data: url.includes("/friends") ? refreshedFriends : unread,
+  }));
+};
 const renderPeople = async (user = { _id: "me-1", friends }) => {
   const store = createStore();
   store.set(userState, user);
@@ -41,14 +49,14 @@ afterEach(() => jest.restoreAllMocks());
 
 describe("People", () => {
   it("shows an empty state when there are no friends", async () => {
-    axios.get.mockResolvedValue({ data: [] });
+    mockResponses([], []);
     await renderPeople({ _id: "me-1", friends: [] });
     expect(screen.getByText("Search to find people like you")).toBeOnTheScreen();
     expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/unread-messages/me-1", { headers: { Authorization: "Bearer test-token" } });
   });
 
   it("loads unread counts and opens friend profiles and chats", async () => {
-    axios.get.mockResolvedValue({ data: [{ userId: "friend-1", count: 2 }] });
+    mockResponses([{ userId: "friend-1", count: 2 }]);
     const { store } = await renderPeople();
 
     expect(await screen.findByText("2")).toBeOnTheScreen();
@@ -62,8 +70,19 @@ describe("People", () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith("ChatScreen", { secondUserInfo: expect.objectContaining({ _id: "friend-1", count: 2 }) });
   });
 
+  it("shows profile changes from another device when the friends list opens", async () => {
+    mockResponses([], [{ ...friends[0], fullname: "Alex Updated" }]);
+    const { store } = await renderPeople();
+
+    expect(await screen.findByText("Alex Updated")).toBeOnTheScreen();
+    expect(store.get(userState).friends[0].fullname).toBe("Alex Updated");
+  });
+
   it("shows a friend's avatar when supplied and initials otherwise", async () => {
-    axios.get.mockResolvedValue({ data: [] });
+    mockResponses([], [
+      { ...friends[0], avatarUrl: "https://example.com/alex.jpg" },
+      { _id: "friend-2", fullname: "Sam Friend", email: "sam@example.com" },
+    ]);
     await renderPeople({ _id: "me-1", friends: [
       { ...friends[0], avatarUrl: "https://example.com/alex.jpg" },
       { _id: "friend-2", fullname: "Sam Friend", email: "sam@example.com" },
@@ -73,12 +92,12 @@ describe("People", () => {
   });
 
   it("refreshes unread counts on socket updates and cleans up", async () => {
-    axios.get.mockResolvedValue({ data: [] });
+    mockResponses();
     const view = await renderPeople();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
 
     await act(async () => mockSocket.serverEmit("updateUnreadCounts"));
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
     await act(async () => view.unmount());
     expect(mockSocket.off).toHaveBeenCalledWith("updateUnreadCounts");
@@ -90,7 +109,10 @@ describe("People", () => {
 it("preserves friends after an unread request fails and recovers on a socket update", async () => {
   const error = new Error("offline");
   jest.spyOn(console, "error").mockImplementation(() => {});
-  axios.get.mockRejectedValueOnce(error).mockResolvedValueOnce({ data: [{ userId: "friend-1", count: 3 }] });
+  let unreadCalls = 0;
+  axios.get.mockImplementation((url) => url.includes("/friends")
+    ? Promise.resolve({ data: friends })
+    : ++unreadCalls === 1 ? Promise.reject(error) : Promise.resolve({ data: [{ userId: "friend-1", count: 3 }] }));
   const { store } = await renderPeople();
 
   await waitFor(() => expect(console.error).toHaveBeenCalledWith(error));
@@ -104,9 +126,10 @@ it("preserves friends after an unread request fails and recovers on a socket upd
 
 
 test("clears old unread badges when the server reports no unread messages", async () => {
-  axios.get
-    .mockResolvedValueOnce({ data: [{ userId: "friend-1", count: 2 }] })
-    .mockResolvedValueOnce({ data: [] });
+  let unreadCalls = 0;
+  axios.get.mockImplementation((url) => Promise.resolve({
+    data: url.includes("/friends") ? friends : ++unreadCalls === 1 ? [{ userId: "friend-1", count: 2 }] : [],
+  }));
   const { store } = await renderPeople();
   expect(await screen.findByText("2")).toBeOnTheScreen();
 
