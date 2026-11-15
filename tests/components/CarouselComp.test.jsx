@@ -16,6 +16,9 @@ describe("CarouselComp", () => {
     expect(screen.getByTestId("activity-image").props.source).toEqual({
       uri: "https://api.clickmate.test/walk.jpg",
     });
+    expect(screen.getByTestId("activity-image").props.style).toEqual(
+      expect.objectContaining({ position: "absolute", width: "100%", height: "100%" })
+    );
     await fireEvent.press(screen.getByText("Coastal walk"));
     expect(onPress).toHaveBeenCalledWith(item, category);
   });

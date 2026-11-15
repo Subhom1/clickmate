@@ -1,14 +1,11 @@
 import {
   StyleSheet,
-  Text,
-  View,
-  Image,
   FlatList,
   Pressable,
   Platform,
 } from "react-native";
 import React from "react";
-import { API_BASE_URL } from "../../constant";
+import ActivityImage from "./ActivityImage";
 const CarouselComp = ({ width, dataArr, onPress, itemMain }) => {
   return (
     <FlatList
@@ -27,19 +24,7 @@ const CarouselComp = ({ width, dataArr, onPress, itemMain }) => {
             onPress(item, itemMain);
           }}
         >
-          <View style={styles.image}>
-            <Image
-              testID="activity-image"
-              source={{ uri: `${API_BASE_URL}${item.imgUrl}` }}
-              style={styles.backgroundImage}
-              resizeMode="cover"
-            />
-            <View style={styles.overlay}>
-              <Text className="text-white font-semibold text-lg items-end pb-3 pl-3 capitalize">
-                {item.text}
-              </Text>
-            </View>
-          </View>
+          <ActivityImage item={item} testID="activity-image" />
         </Pressable>
       )}
     />
@@ -60,22 +45,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3.84,
     elevation: 5, // Box shadow for Android
-  },
-  image: {
-    height: "100%",
-    width: "100%",
-    borderRadius: 22,
-    overflow: "hidden",
-  },
-  backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.3)", // Semi-transparent overlay
-    borderRadius: 22,
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
   },
 });
 
