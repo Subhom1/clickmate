@@ -46,7 +46,7 @@ const renderChat = async ({ matchedUser = false } = {}) => {
         route={{
           params: matchedUser
             ? { platform: "ios" }
-            : { platform: "ios", secondUserInfo: { _id: "friend-1", fullname: "Alex Friend" } },
+            : { platform: "ios", secondUserInfo: { _id: "friend-1", email: "alex@example.com", fullname: "Alex Friend" } },
         }}
       />
     </Provider>
@@ -55,6 +55,38 @@ const renderChat = async ({ matchedUser = false } = {}) => {
 };
 
 describe("ChatScreen", () => {
+  it("opens a friend's profile from the chat header and incoming avatar", async () => {
+    axios.get.mockResolvedValue({ data: {
+      _id: "chat-1",
+      messages: [{ sender: "friend-1", content: "Hello" }],
+    } });
+    await renderChat();
+    expect(await screen.findByText("Hello")).toBeOnTheScreen();
+
+    const profileButtons = screen.getAllByLabelText("View Alex Friend profile");
+    expect(profileButtons).toHaveLength(2);
+    await fireEvent.press(profileButtons[0]);
+    await fireEvent.press(profileButtons[1]);
+    expect(mockNavigation.navigate).toHaveBeenCalledTimes(2);
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("VisitorProfile", {
+      userId: "friend-1",
+      userEmail: "alex@example.com",
+      platform: "ios",
+    });
+  });
+
+  it("opens a discovered match's profile before any messages arrive", async () => {
+    axios.get.mockResolvedValue({ data: { _id: "chat-1", messages: [] } });
+    await renderChat({ matchedUser: true });
+
+    await fireEvent.press(screen.getByLabelText("View Alex Friend profile"));
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("VisitorProfile", {
+      userId: "friend-1",
+      userEmail: undefined,
+      platform: "ios",
+    });
+  });
+
   it("loads history, sends and receives messages, clears the chat, and leaves", async () => {
     axios.get.mockResolvedValue({
       data: {
@@ -140,7 +172,7 @@ describe("ChatScreen", () => {
     });
 
     expect(screen.getAllByText("Server confirmed")).toHaveLength(1);
-    expect(screen.queryByText("AF")).toBeNull();
+    expect(screen.getAllByLabelText("View Alex Friend profile")).toHaveLength(1);
   });
 
   it("replaces the selected chat atom with the fetched ID and uses it for sending", async () => {

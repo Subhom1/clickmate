@@ -119,6 +119,20 @@ describe("VisitorProfile", () => {
     expect(store.get(userState).friends[0].fullname).toBe("Alex Updated");
   });
 
+  it("finds a friend by ID when chat opens the profile", async () => {
+    mockResponses();
+    const store = createStore();
+    store.set(userState, { _id: "me-1", friends });
+    await render(
+      <Provider store={store}>
+        <VisitorProfile route={{ params: { userId: "friend-1", platform: "ios" } }} />
+      </Provider>
+    );
+
+    expect(await screen.findByText("Alex Friend")).toBeOnTheScreen();
+    expect(screen.getByText("Enjoys weekend hikes.")).toBeOnTheScreen();
+  });
+
   it("loads a newer profile when the friend page is opened again", async () => {
     mockResponses();
     const firstVisit = await renderProfile("alex@example.com");
