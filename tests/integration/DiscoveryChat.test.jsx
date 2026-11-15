@@ -17,7 +17,7 @@ let mockSockets;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn());
 jest.mock("axios", () => ({ get: jest.fn(), post: jest.fn() }));
-jest.mock("../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../constant", () => ({ API_BASE_URL: "https://api.clickmate.test" }));
 jest.mock("@expo/vector-icons/MaterialIcons", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -59,6 +59,7 @@ async function startSearch() {
   store.set(userState, { _id: "me-1", email: "me@example.com" });
   const view = await renderWithProviders(<Flow />, { store });
   const searchSocket = mockSockets[0];
+  expect(io).toHaveBeenCalledWith("https://api.clickmate.test", { reconnectionAttempts: 5 });
   // A real connect event submits the category; no client-side echo is simulated.
   jest.spyOn(console, "log").mockImplementation(() => {});
   await act(async () => searchSocket.serverEmit("connect"));
@@ -81,8 +82,8 @@ it("carries a discovered match into chat history, sending, and incoming avatars"
   expect(store.get(matchState)).toEqual({ user: friend });
   await fireEvent.press(screen.getByText("Chat"));
   expect(await screen.findByText("Trail history")).toBeOnTheScreen();
-  expect(axios.post).toHaveBeenCalledWith("http://localhost:5051/create-chat", { user1Id: "me-1", user2Id: "friend-1" });
-  expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/chat/me-1/friend-1");
+  expect(axios.post).toHaveBeenCalledWith("https://api.clickmate.test/create-chat", { user1Id: "me-1", user2Id: "friend-1" });
+  expect(axios.get).toHaveBeenCalledWith("https://api.clickmate.test/chat/me-1/friend-1");
   expect(store.get(chatState)).toBe("created-chat");
   const chatSocket = mockSockets[1];
   expect(chatSocket.emit).toHaveBeenCalledWith("joinChat", { chatId: "created-chat" });

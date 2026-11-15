@@ -12,7 +12,8 @@ import React, { useState, useEffect } from "react";
 import { useAtom, useSetAtom } from "jotai";
 import { exploreState } from "../state/atoms/ExploreState";
 import axios from "axios";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
+import { getCategoryTitle } from "../utils/explore";
 import CarouselComp from "../components/CarouselComp";
 import { useNavigation } from "@react-navigation/native";
 
@@ -28,7 +29,7 @@ export default function Explore({ route }) {
     setHasError(false);
 
     try {
-      const res = await axios.get(`http://${IP}:5051/explore`);
+      const res = await axios.get(`${API_BASE_URL}/explore`);
       setExploreState(res.data);
     } catch (e) {
       console.error(e, "Error loading explore activities");
@@ -53,8 +54,7 @@ export default function Explore({ route }) {
   const renderItem = ({ item }) => (
     <View style={{ marginBottom: 25 }}>
       <Text className="font-bold text-lg mt-5 mb-3 capitalize">
-        {item.category == "hikes" && "Hikes to do together"}
-        {item.category == "movies" && "Movies to watch together "}
+        {getCategoryTitle(item.category)}
       </Text>
       <CarouselComp
         dataArr={item?.list}

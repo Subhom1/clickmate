@@ -10,7 +10,7 @@ jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));
 jest.mock("axios", () => ({ get: jest.fn() }));
-jest.mock("../../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "https://api.clickmate.test" }));
 jest.mock("../../../app/components/CarouselComp", () => {
   const React = require("react");
   const { Pressable, Text } = require("react-native");
@@ -46,7 +46,7 @@ describe("Explore", () => {
     await renderExplore();
 
     expect(screen.getByText("Loading activities...")).toBeOnTheScreen();
-    expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/explore");
+    expect(axios.get).toHaveBeenCalledWith("https://api.clickmate.test/explore");
   });
 
   it("loads activities and opens a selected category", async () => {

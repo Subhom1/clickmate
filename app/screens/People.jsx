@@ -6,27 +6,30 @@ import {
   FlatList,
   Pressable,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import { useAtom } from "jotai";
+import React, { useEffect, useMemo, useState } from "react";
+import { useAtomValue } from "jotai";
 import { userState } from "../state/atoms/UserState";
 import Icon from "@expo/vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
 import io from "socket.io-client";
 import axios from "axios";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 import { InitialsCircle } from "../components/CreateAvatar";
 
 export default function People({ route }) {
-  const [userData, setUserData] = useAtom(userState);
-  const [userUnreadArr, setUserUnreadArr] = useState([]);
+  const userData = useAtomValue(userState);
+  const [userUnreadArr, setUserUnreadArr] = useState(null);
   const navigation = useNavigation();
   useEffect(() => {
-    const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    let active = true;
+    setUserUnreadArr(null);
+    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
     const getUnreadMsgs = async () => {
+      if (!userData?._id) return;
       await axios
-        .get(`http://${IP}:5051/unread-messages/${userData?._id}`)
+        .get(`${API_BASE_URL}/unread-messages/${userData?._id}`)
         .then((res) => {
-          setUserUnreadArr(res.data);
+          if (active) setUserUnreadArr(res.data);
         })
         .catch((e) => console.error(e));
     };
@@ -39,29 +42,29 @@ export default function People({ route }) {
     }
 
     return () => {
+      active = false;
       newSocket.off("updateUnreadCounts");
       newSocket.disconnect();
     };
   }, [userData?._id]);
 
-  useEffect(() => {
-    if (userUnreadArr?.length && userData?.friends?.length) {
-      const newFriends = userData?.friends.map((item) => {
-        const unread = userUnreadArr.find(
-          (unreadItem) => unreadItem.userId === item._id
-        );
-        return { ...item, count: unread ? unread.count : 0 };
-      });
-      setUserData((prev) => ({ ...prev, friends: newFriends }));
-    }
-  }, [userUnreadArr]);
+  // Unread counts belong to this screen; keep the shared profile unchanged.
+  const friendsWithUnreadCounts = useMemo(() => {
+    if (!userUnreadArr) return userData?.friends ?? [];
+    const counts = new Map(userUnreadArr.map(({ userId, count }) => [userId, count]));
+    return (userData?.friends ?? []).map((friend) => ({
+      ...friend,
+      count: counts.get(friend._id) ?? 0,
+    }));
+  }, [userData?.friends, userUnreadArr]);
+
   const { platform } = route.params;
   return (
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="auto" />
       <View className={`flex-1 mx-7 ${platform == "ios" ? "mt-5" : "mt-16"}`}>
         <Text className="text-2xl font-bold mb-5">People</Text>
-        {!userData?.friends?.length ? (
+        {!friendsWithUnreadCounts.length ? (
           <View className="flex-1 justify-center items-center">
             <Text className="text-primary_gray">
               Search to find people like you
@@ -72,7 +75,7 @@ export default function People({ route }) {
             contentContainerStyle={{
               paddingBottom: platform == "ios" ? 80 : 100,
             }}
-            data={userData?.friends}
+            data={friendsWithUnreadCounts}
             keyExtractor={(item) => item._id}
             renderItem={({ item }) => (
               <View className="flex-row mt-2 justify-between bg-slate-200 px-8 py-4 rounded-2xl">

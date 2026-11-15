@@ -11,7 +11,7 @@ const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
-jest.mock("../../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("../../../app/components/ToggleSwitch", () => () => null);
 jest.mock("@expo/vector-icons/FontAwesome5", () => {
   const React = require("react");

@@ -8,26 +8,21 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  Modal,
-  Image,
-  ActivityIndicator,
-  AppState,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
 import { signOut } from "firebase/auth";
 import axios from "axios";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { userState } from "../state/atoms/UserState";
-import { IP, API_BASE_URL } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 import Icon from "@expo/vector-icons/Feather";
 import { InitialsCircle } from "../components/CreateAvatar";
-import { selectProfilePhoto } from "../profilePhoto/selectPhoto";
-import { profilePhotoApi, ProfilePhotoApiUnavailableError } from "../profilePhoto/api";
+import { useProfilePhotoEditor } from "../hooks/useProfilePhotoEditor";
+import ProfilePhotoEditor from "../components/ProfilePhotoEditor";
 
-export default function Profile({ route }) {
+export default function Profile() {
   const [userData, setUserData] = useAtom(userState);
-  const setUserStateData = useSetAtom(userState);
   const [fullname, setFullName] = useState("");
   const [bio, setBio] = useState("");
   const [editMode, setEditMode] = useState(false);
@@ -36,122 +31,22 @@ export default function Profile({ route }) {
   const [nameError, setNameError] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
-  const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
-  const [photoDraft, setPhotoDraft] = useState(null);
-  const [photoBusy, setPhotoBusy] = useState(false);
-  const [photoError, setPhotoError] = useState("");
-  const [photoProgress, setPhotoProgress] = useState(null);
-  const [photoCanRetry, setPhotoCanRetry] = useState(false);
-  const [removeConfirm, setRemoveConfirm] = useState(false);
-  const [photoRemoving, setPhotoRemoving] = useState(false);
-  const choosePhoto = async (source) => {
-    if (photoBusy) return;
-    setPhotoBusy(true);
-    setPhotoError("");
-    try {
-      const selected = await selectProfilePhoto(source);
-      if (selected) {
-        setPhotoDraft(selected);
-        setRemoveConfirm(false);
-        setPhotoCanRetry(false);
-        setPhotoProgress(null);
-      }
-    } catch (error) {
-      setPhotoError(error?.message || "The photo could not be prepared.");
-    } finally {
-      setPhotoBusy(false);
-    }
-  };
-  const closePhotoEditor = () => {
-    if (photoBusy) return;
-    setPhotoDraft(null);
-    setPhotoError("");
-    setPhotoProgress(null);
-    setPhotoCanRetry(false);
-    setRemoveConfirm(false);
-    setPhotoEditorOpen(false);
-  };
-  const savePhoto = async () => {
-    if (!photoDraft || !userData?._id || photoBusy) return;
-    setPhotoBusy(true);
-    setPhotoError("");
-    setPhotoProgress(0);
-    try {
-      const result = await profilePhotoApi.save(userData._id, photoDraft, setPhotoProgress);
-      if (result?.id !== userData._id || !result.avatarUrl) {
-        throw new Error("The updated profile photo was not returned.");
-      }
-      setUserData((current) => ({ ...current, avatarUrl: result.avatarUrl, avatarMediaId: result.avatarMediaId, avatarExpiresAt: result.avatarExpiresAt }));
-      setPhotoDraft(null);
-      setPhotoProgress(null);
-      setPhotoCanRetry(false);
-      setPhotoEditorOpen(false);
-    } catch (error) {
-      setPhotoError(error?.message || "The photo could not be saved.");
-      setPhotoProgress(null);
-      setPhotoCanRetry(!(error instanceof ProfilePhotoApiUnavailableError));
-    } finally {
-      setPhotoBusy(false);
-    }
-  };
-  const removePhoto = async () => {
-    if (!removeConfirm || !userData?._id || !userData?.avatarUrl || photoBusy) return;
-    setPhotoBusy(true);
-    setPhotoRemoving(true);
-    setPhotoError("");
-    try {
-      const result = await profilePhotoApi.remove(userData._id);
-      if (result?.id !== userData._id || result.avatarUrl !== null) {
-        throw new Error("Photo removal was not confirmed.");
-      }
-      setUserData((current) => ({ ...current, avatarUrl: null, avatarMediaId: null, avatarExpiresAt: null }));
-      closePhotoEditorAfterRemoval();
-    } catch (error) {
-      setPhotoError(error?.message || "The photo could not be removed.");
-    } finally {
-      setPhotoBusy(false);
-      setPhotoRemoving(false);
-    }
-  };
-  const closePhotoEditorAfterRemoval = () => {
-    setPhotoDraft(null);
-    setRemoveConfirm(false);
-    setPhotoEditorOpen(false);
-  };
+  const photoEditor = useProfilePhotoEditor(userData, setUserData);
   useEffect(() => {
     getAllInterests();
   }, []);
   useEffect(() => {
-    if (!userData?._id || !userData?.avatarMediaId || !userData?.avatarExpiresAt) return;
-    let active = true;
-    let retryTimer;
-    const refresh = async () => {
-      try {
-        const avatar = await profilePhotoApi.getProfile();
-        if (active) setUserData((current) => current?._id === userData._id ? { ...current, ...avatar } : current);
-      } catch {
-        if (active) retryTimer = setTimeout(refresh, 30000);
-      }
-    };
-    const delay = Math.max(0, Date.parse(userData.avatarExpiresAt) - Date.now() - 30000);
-    const expiryTimer = setTimeout(refresh, Number.isFinite(delay) ? delay : 0);
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active" && Date.parse(userData.avatarExpiresAt) - Date.now() < 30000) refresh();
-    });
-    return () => { active = false; clearTimeout(expiryTimer); clearTimeout(retryTimer); subscription.remove(); };
-  }, [userData?._id, userData?.avatarMediaId, userData?.avatarExpiresAt]);
-  useEffect(() => {
     if (userData) {
-      setUserInterestsIDs(userData?.interests.map((item) => item._id));
-      setFullName(userData?.fullname);
-      setBio(userData?.bio);
+      setUserInterestsIDs(userData.interests?.map((item) => item._id) ?? []);
+      setFullName(userData.fullname ?? "");
+      setBio(userData.bio ?? "");
     }
   }, [userData]);
-  const signOutt = () => {
+  const signOutUser = () => {
     signOut(Auth)
       .then(() => {
         console.log("Sign out sucessful");
-        setUserStateData(null);
+        setUserData(null);
       })
       .catch((error) => {
         console.error(error);
@@ -163,11 +58,11 @@ export default function Profile({ route }) {
       try {
         // Backend to delete the user from Firebase Auth and MongoDB
         await axios.delete(
-          `http://${IP}:5051/deleteUser/${userData._id}/${user.uid}`
+          `${API_BASE_URL}/deleteUser/${userData._id}/${user.uid}`
         );
         // Delete the user from Firebase Auth
         await user.delete();
-        setUserStateData(null);
+        setUserData(null);
       } catch (error) {
         console.error("Error deleting user account:", error);
       }
@@ -203,7 +98,7 @@ export default function Profile({ route }) {
       const res = await axios.patch(`${API_BASE_URL}/user/${userData?._id}`, newUserData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUserStateData((current) => ({
+      setUserData((current) => ({
         ...current,
         ...res.data,
         ...(current?.avatarUrl ? { avatarUrl: current.avatarUrl, avatarExpiresAt: current.avatarExpiresAt } : {}),
@@ -227,7 +122,7 @@ export default function Profile({ route }) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Edit profile photo"
-              onPress={() => setPhotoEditorOpen(true)}
+              onPress={() => photoEditor.setPhotoEditorOpen(true)}
               style={styles.avatarButton}
             >
               {userData?.avatarUrl ? <InitialsCircle
@@ -259,7 +154,7 @@ export default function Profile({ route }) {
                   }} style={styles.editIconButton}>
                     <Icon name="edit-2" size={19} color="#47790B" />
                   </Pressable>
-                  <Pressable accessibilityRole="button" onPress={signOutt} style={styles.headerTextButton}>
+                  <Pressable accessibilityRole="button" onPress={signOutUser} style={styles.headerTextButton}>
                     <Text style={styles.logoutText}>Logout</Text>
                   </Pressable>
                 </>
@@ -365,57 +260,7 @@ export default function Profile({ route }) {
           </TouchableOpacity>
         )}
       </ScrollView>
-      <Modal visible={photoEditorOpen} animationType="slide" transparent onRequestClose={closePhotoEditor}>
-        <SafeAreaView style={styles.photoBackdrop}>
-          <View style={styles.photoSheet}>
-            <Text style={styles.photoTitle}>{userData?.avatarUrl ? "Replace profile photo" : "Profile photo"}</Text>
-            <Text style={styles.photoHint}>{photoDraft ? "Preview your crop before saving." : userData?.avatarUrl ? "Choose a new photo or remove this one." : "Choose a photo to show on your profile."}</Text>
-            {photoDraft ? (
-              <Image
-                accessibilityLabel="Cropped photo preview"
-                source={{ uri: photoDraft.uri }}
-                style={styles.photoPreview}
-              />
-            ) : null}
-            {photoBusy && <ActivityIndicator accessibilityLabel={photoRemoving ? "Removing photo" : photoProgress === null ? "Preparing photo" : "Uploading photo"} color="#67AB0F" />}
-            {photoProgress !== null && photoBusy && (
-              <Text style={styles.photoStatus} accessibilityLiveRegion="polite" accessibilityLabel="Photo upload progress">
-                {photoProgress >= 0.9 ? "Finishing photo..." : `Uploading photo: ${Math.round(photoProgress * 100)}%`}
-              </Text>
-            )}
-            {!photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={[styles.photoAction, styles.photoActionPrimary]}>
-              <Text style={styles.photoActionPrimaryText}>{userData?.avatarUrl ? "Upload new photo" : "Choose from gallery"}</Text>
-            </Pressable>}
-            {photoDraft && <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => choosePhoto("library")} style={styles.photoAction}>
-              <Text style={styles.photoActionText}>Choose another photo</Text>
-            </Pressable>}
-            {photoDraft && (
-              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={savePhoto} style={[styles.photoAction, styles.photoActionPrimary]}>
-                <Text style={styles.photoActionPrimaryText}>{photoCanRetry ? "Retry upload" : userData?.avatarUrl ? "Replace photo" : "Save photo"}</Text>
-              </Pressable>
-            )}
-            {userData?.avatarUrl && !photoDraft && (removeConfirm ? (
-              <>
-                <Text style={styles.removePrompt}>Remove your current profile photo?</Text>
-                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={removePhoto} style={[styles.photoAction, styles.photoActionDestructive]}>
-                  <Text style={styles.photoActionDestructiveText}>Confirm removal</Text>
-                </Pressable>
-                <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(false)} style={styles.photoAction}>
-                  <Text style={styles.photoActionText}>Keep photo</Text>
-                </Pressable>
-              </>
-            ) : (
-              <Pressable accessibilityRole="button" disabled={photoBusy} onPress={() => setRemoveConfirm(true)} style={[styles.photoAction, styles.photoActionDestructive]}>
-                <Text style={styles.photoActionDestructiveText}>Delete photo</Text>
-              </Pressable>
-            ))}
-            {!!photoError && <Text accessibilityRole="alert" style={styles.photoError}>{photoError}</Text>}
-            <Pressable accessibilityRole="button" disabled={photoBusy} onPress={closePhotoEditor} style={[styles.photoAction, styles.photoActionCancel]}>
-              <Text style={styles.photoActionText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
-      </Modal>
+      <ProfilePhotoEditor avatarUrl={userData?.avatarUrl} editor={photoEditor} />
     </SafeAreaView>
   );
 }
@@ -448,21 +293,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 8,
   },
-  photoBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#0006" },
-  photoSheet: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 25, paddingBottom: 20, alignItems: "center", gap: 10 },
-  photoTitle: { color: "#172115", fontSize: 21, fontWeight: "700", textAlign: "center" },
-  photoHint: { color: "#667263", fontSize: 14, lineHeight: 20, textAlign: "center", marginBottom: 8 },
-  photoPreview: { width: 196, height: 196, borderRadius: 98, marginBottom: 8 },
-  photoStatus: { color: "#47790B", fontSize: 14, fontWeight: "500" },
-  photoAction: { minHeight: 50, width: "100%", borderRadius: 25, backgroundColor: "#EAF5E3", justifyContent: "center", alignItems: "center" },
-  photoActionPrimary: { backgroundColor: "#67AB0F" },
-  photoActionCancel: { backgroundColor: "#F2F5EF" },
-  photoActionDestructive: { backgroundColor: "#FDEEEF" },
-  photoActionText: { color: "#2F432D", fontSize: 15, fontWeight: "600" },
-  photoActionPrimaryText: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
-  photoActionDestructiveText: { color: "#A0242A", fontSize: 15, fontWeight: "600" },
-  removePrompt: { color: "#4B5A48", fontSize: 14, textAlign: "center" },
-  photoError: { color: "#AB0F12", fontSize: 14, textAlign: "center" },
   photoPlaceholder: { width: 88, height: 88, borderRadius: 44, backgroundColor: "#EAF5E3", borderWidth: 1, borderColor: "#A7D27C", alignItems: "center", justifyContent: "center" },
   photoPlus: { position: "absolute", right: -1, bottom: -1, width: 26, height: 26, borderRadius: 13, backgroundColor: "#67AB0F", alignItems: "center", justifyContent: "center" },
 });

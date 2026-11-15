@@ -5,6 +5,7 @@ jest.mock("../../FirebaseSecret", () => ({
 jest.mock("firebase/app", () => ({ initializeApp: jest.fn(() => ({ name: "test-app" })) }));
 jest.mock("firebase/auth", () => ({
   initializeAuth: jest.fn(() => ({ name: "test-auth" })),
+  getAuth: jest.fn(() => ({ name: "web-test-auth" })),
   getReactNativePersistence: jest.fn(() => ({ type: "test-persistence" })),
 }));
 jest.mock("@react-native-async-storage/async-storage", () => ({
@@ -44,4 +45,20 @@ it("shares one initialized app and auth across repeated consumer imports", () =>
   expect(second.FIREBASE_APP).toBe(first.FIREBASE_APP);
   expect(require("firebase/app").initializeApp).toHaveBeenCalledTimes(1);
   expect(require("firebase/auth").initializeAuth).toHaveBeenCalledTimes(1);
+});
+
+it("uses browser auth on web without native persistence", () => {
+  const { Platform } = require("react-native");
+  const nativePlatform = Platform.OS;
+  Platform.OS = "web";
+  try {
+    const { Auth, FIREBASE_APP } = require("../../FirebaseConfig");
+    const { getAuth, initializeAuth, getReactNativePersistence } = require("firebase/auth");
+    expect(getAuth).toHaveBeenCalledWith(FIREBASE_APP);
+    expect(Auth).toBe(getAuth.mock.results[0].value);
+    expect(initializeAuth).not.toHaveBeenCalled();
+    expect(getReactNativePersistence).not.toHaveBeenCalled();
+  } finally {
+    Platform.OS = nativePlatform;
+  }
 });

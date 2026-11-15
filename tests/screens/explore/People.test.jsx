@@ -12,7 +12,7 @@ let mockSocket;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
-jest.mock("../../../constant", () => ({ IP: "localhost" }));
+jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("@expo/vector-icons/AntDesign", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -51,14 +51,14 @@ describe("People", () => {
     const { store } = await renderPeople();
 
     expect(await screen.findByText("2")).toBeOnTheScreen();
-    await waitFor(() => expect(store.get(userState).friends[0].count).toBe(2));
+    expect(store.get(userState).friends).toEqual(friends);
 
     await fireEvent.press(screen.getByText("Alex Friend"));
     expect(mockNavigation.navigate).toHaveBeenCalledWith("VisitorProfile", {
       userEmail: "alex@example.com",
     });
     await fireEvent.press(screen.getByText("message"));
-    expect(mockNavigation.navigate).toHaveBeenCalledWith("ChatScreen", { secondUserInfo: expect.objectContaining({ _id: "friend-1" }) });
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("ChatScreen", { secondUserInfo: expect.objectContaining({ _id: "friend-1", count: 2 }) });
   });
 
   it("shows a friend's avatar when supplied and initials otherwise", async () => {
@@ -98,5 +98,18 @@ it("preserves friends after an unread request fails and recovers on a socket upd
 
   await act(async () => mockSocket.serverEmit("updateUnreadCounts"));
   expect(await screen.findByText("3")).toBeOnTheScreen();
-  expect(store.get(userState).friends[0].count).toBe(3);
+  expect(store.get(userState).friends).toEqual(friends);
+});
+
+
+test("clears old unread badges when the server reports no unread messages", async () => {
+  axios.get
+    .mockResolvedValueOnce({ data: [{ userId: "friend-1", count: 2 }] })
+    .mockResolvedValueOnce({ data: [] });
+  const { store } = await renderPeople();
+  expect(await screen.findByText("2")).toBeOnTheScreen();
+
+  await act(async () => mockSocket.serverEmit("updateUnreadCounts"));
+  await waitFor(() => expect(screen.queryByText("2")).toBeNull());
+  expect(store.get(userState).friends).toEqual(friends);
 });

@@ -1,19 +1,17 @@
 import React, { useRef, useEffect } from "react";
-import { ScrollView, View, StyleSheet, Text, Keyboard, Image } from "react-native";
+import { ScrollView, View, StyleSheet, Text, Keyboard } from "react-native";
 import { InitialsCircle } from "../../components/CreateAvatar";
 
 const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) => {
   const scrollViewRef = useRef();
 
   const goToBottomList = () => {
-    scrollViewRef.current.scrollToEnd({ animated: false });
+    scrollViewRef.current?.scrollToEnd({ animated: false });
   };
 
   useEffect(() => {
-    Keyboard.addListener("keyboardDidShow", goToBottomList);
-    return () => {
-      Keyboard.removeAllListeners("keyboardDidShow", goToBottomList);
-    };
+    const subscription = Keyboard.addListener("keyboardDidShow", goToBottomList);
+    return () => subscription.remove();
   }, []);
 
   return (

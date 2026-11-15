@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import React from "react";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
 const CarouselComp = ({ width, dataArr, onPress, itemMain }) => {
   return (
     <FlatList
@@ -30,7 +30,7 @@ const CarouselComp = ({ width, dataArr, onPress, itemMain }) => {
           <View style={styles.image}>
             <Image
               testID="activity-image"
-              source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
+              source={{ uri: `${API_BASE_URL}${item.imgUrl}` }}
               style={styles.backgroundImage}
               resizeMode="cover"
             />

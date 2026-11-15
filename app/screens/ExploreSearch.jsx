@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { IP } from "../../constant";
+import { API_BASE_URL } from "../../constant";
+import { getCategoryTitle } from "../utils/explore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";
 import { matchState } from "../state/atoms/MatchState";
@@ -32,7 +33,7 @@ export default function ExploreSearch({ route }) {
       return;
     }
 
-    const newSocket = io(`http://${IP}:5051`, { reconnectionAttempts: 5 });
+    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
     setSocket(newSocket);
     const submitSearch = () => {
       setNoResult(false);
@@ -97,8 +98,7 @@ export default function ExploreSearch({ route }) {
             <Icon name="arrow-back-ios-new" size={20} />
           </Pressable>
           <Text className="text-xl font-semibold ml-5">
-            {itemTitle == "hikes" && "Hikes to do together"}
-            {itemTitle == "movies" && "Movies to watch together "}
+            {getCategoryTitle(itemTitle)}
           </Text>
         </View>
 
@@ -106,7 +106,7 @@ export default function ExploreSearch({ route }) {
           <View style={styles.carouselItemContainer}>
             <View style={styles.image}>
               <Image
-                source={{ uri: `http://${IP}:5051${item.imgUrl}` }}
+                source={{ uri: `${API_BASE_URL}${item.imgUrl}` }}
                 style={styles.backgroundImage}
                 resizeMode="cover"
               />
