@@ -4,14 +4,13 @@ import {
   Text,
   StatusBar,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Pressable,
   Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { API_BASE_URL } from "../../constant";
+import ActivityImage from "../components/ActivityImage";
 import { getCategoryTitle } from "../utils/explore";
 import Icon from "@expo/vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";
@@ -104,18 +103,7 @@ export default function ExploreSearch({ route }) {
 
         <View className="mt-32">
           <View style={styles.carouselItemContainer}>
-            <View style={styles.image}>
-              <Image
-                source={{ uri: `${API_BASE_URL}${item.imgUrl}` }}
-                style={styles.backgroundImage}
-                resizeMode="cover"
-              />
-              <View style={styles.overlay}>
-                <Text className="text-white font-semibold text-lg items-end pb-3 pl-3 capitalize">
-                  {item?.text}
-                </Text>
-              </View>
-            </View>
+            <ActivityImage item={item} testID="selected-activity-image" />
           </View>
           {!noResult ? (
             <Text className="my-5 text-center text-sm font-medium">
@@ -148,22 +136,6 @@ export default function ExploreSearch({ route }) {
   );
 }
 const styles = StyleSheet.create({
-  image: {
-    height: "100%",
-    width: "100%",
-    borderRadius: 22,
-    overflow: "hidden",
-  },
-  backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.3)", // Semi-transparent overlay
-    borderRadius: 22,
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
-  },
   carouselItemContainer: {
     backgroundColor: "white",
     height: 170,

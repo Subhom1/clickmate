@@ -65,6 +65,9 @@ describe("ExploreSearch", () => {
       query: "hikes",
     });
     expect(screen.getByText("Searching for a budy. . .")).toBeOnTheScreen();
+    expect(screen.getByTestId("selected-activity-image").props.source).toEqual({
+      uri: "http://localhost:5051/walk.jpg",
+    });
   });
 
   it("stores a found match and opens the result screen", async () => {
