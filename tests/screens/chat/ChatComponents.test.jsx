@@ -51,6 +51,9 @@ describe("Chat components", () => {
     expect(screen.getByText("Hi from Alex")).toBeOnTheScreen();
     expect(screen.getByText("Hi from me")).toBeOnTheScreen();
     expect(screen.getByText("AF")).toBeOnTheScreen();
+    const scroll = screen.getByTestId("keyboard-dismiss-scroll");
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
   });
 
   it("removes its keyboard listener when the message list closes", async () => {

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
-import { ScrollView, View, StyleSheet, Text, Keyboard } from "react-native";
+import { View, StyleSheet, Text, Keyboard } from "react-native";
 import { InitialsCircle } from "../../components/CreateAvatar";
+import KeyboardDismissScrollView from "../../components/KeyboardDismissScrollView";
 
 const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) => {
   const scrollViewRef = useRef();
@@ -15,7 +16,7 @@ const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) =>
   }, []);
 
   return (
-    <ScrollView
+    <KeyboardDismissScrollView
       ref={scrollViewRef}
       style={{ flex: 1, paddingHorizontal: 15 }}
       contentContainerStyle={{ paddingBottom: 30 }}
@@ -25,7 +26,7 @@ const MessagesList = ({ messagesHistory, fullName, avatarUrl, avatarFileId }) =>
         messagesHistory.map((message, index) => (
           <Message key={index} {...{ message }} fullName={fullName} avatarUrl={avatarUrl} avatarFileId={avatarFileId} />
         ))}
-    </ScrollView>
+    </KeyboardDismissScrollView>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Keyboard } from "react-native";
+import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from "./app/screens/Login";
@@ -93,35 +93,11 @@ const Tab = createBottomTabNavigator();
 const MyTabs = ({ route }) => {
   const [userData, setUserData] = useAtom(userState);
   const platform = route.params?.platform ?? route.params?.params?.platform;
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      (e) => {
-        setKeyboardVisible(true);
-        setKeyboardHeight(-e.endCoordinates.height);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
   return (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           height: platform == "ios" ? 90 : 75,
           borderTopRightRadius: 30,
@@ -133,11 +109,7 @@ const MyTabs = ({ route }) => {
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: isKeyboardVisible
-            ? platform == "ios"
-              ? 0
-              : keyboardHeight
-            : 0,
+          bottom: 0,
         },
       }}
     >

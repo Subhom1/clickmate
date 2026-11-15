@@ -1,5 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { Keyboard } from "react-native";
 import { Provider, createStore } from "jotai";
 import axios from "axios";
 import { signOut } from "firebase/auth";
@@ -49,6 +50,19 @@ const renderProfile = async (user = initialUser) => {
 };
 
 describe("Profile", () => {
+  it("allows outside taps and scrolling to close the edit keyboard", async () => {
+    const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    axios.patch.mockResolvedValue({ data: initialUser });
+    await renderProfile();
+    const scroll = screen.getByTestId("keyboard-dismiss-scroll");
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+
+    await fireEvent.press(screen.getByLabelText("Edit profile details"));
+    await fireEvent.press(screen.getByText("Update"));
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  });
+
   it("shows a left-aligned camera placeholder and gallery choice before upload", async () => {
     await renderProfile();
     const trigger = screen.getByLabelText("Edit profile photo");

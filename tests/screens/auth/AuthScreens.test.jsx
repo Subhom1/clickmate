@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Keyboard } from "react-native";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Provider } from "jotai";
 import Login from "../../../app/screens/Login";
@@ -53,6 +53,17 @@ const renderSignup = async () =>
   );
 
 describe("Login", () => {
+  it("dismisses the keyboard on outside taps, drags, and submit", async () => {
+    const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    await render(<Login />);
+    const scroll = screen.getByTestId("keyboard-dismiss-scroll");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+
+    await fireEvent.press(screen.getByText("Login"));
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  });
+
   it("shows required field messages without attempting sign in", async () => {
     await render(<Login />);
     await fireEvent.press(screen.getByText("Login"));
@@ -123,6 +134,17 @@ describe("Login", () => {
 });
 
 describe("Sign up", () => {
+  it("keeps the whole form scrollable and dismisses the keyboard on submit", async () => {
+    const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    await renderSignup();
+    const scroll = screen.getByTestId("keyboard-dismiss-scroll");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+
+    await fireEvent.press(screen.getByText("Sign Up"));
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  });
+
   const fillSignup = async ({ name = "Casey User", email = "casey@example.com", password = "secret1", confirmation = password } = {}) => {
     await fireEvent.changeText(screen.getByPlaceholderText("Enter your full name"), name);
     await fireEvent.changeText(screen.getByPlaceholderText("Enter your email"), email);

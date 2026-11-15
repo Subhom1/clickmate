@@ -7,7 +7,7 @@ import {
   Pressable,
   TextInput,
   StyleSheet,
-  ScrollView,
+  Keyboard,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Auth } from "../../FirebaseConfig";
@@ -20,6 +20,7 @@ import Icon from "@expo/vector-icons/Feather";
 import { InitialsCircle } from "../components/CreateAvatar";
 import { useProfilePhotoEditor } from "../hooks/useProfilePhotoEditor";
 import ProfilePhotoEditor from "../components/ProfilePhotoEditor";
+import KeyboardDismissScrollView from "../components/KeyboardDismissScrollView";
 
 export default function Profile() {
   const [userData, setUserData] = useAtom(userState);
@@ -78,6 +79,7 @@ export default function Profile() {
     }
   };
   const updateUserData = async () => {
+    Keyboard.dismiss();
     if (profileSaving) return;
     if (!fullname) {
       setNameError(true);
@@ -116,7 +118,7 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="auto" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardDismissScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
         <View style={styles.profileCard}>
           <View style={styles.headerRow}>
             <Pressable
@@ -259,7 +261,7 @@ export default function Profile() {
             <Text className="text-white">Delete Account</Text>
           </TouchableOpacity>
         )}
-      </ScrollView>
+      </KeyboardDismissScrollView>
       <ProfilePhotoEditor avatarUrl={userData?.avatarUrl} editor={photoEditor} />
     </SafeAreaView>
   );
