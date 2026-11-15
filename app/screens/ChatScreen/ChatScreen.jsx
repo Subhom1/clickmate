@@ -10,7 +10,8 @@ import { StatusBar } from "expo-status-bar";
 import Header from "./Header";
 import MessageInputBox from "./MessageInputBox";
 import MessagesList from "./MessagesList";
-import io from "socket.io-client";
+import { createAuthenticatedSocket } from "../../network/socket";
+import { authenticatedHeaders } from "../../network/auth";
 import { useAtom, useSetAtom } from "jotai";
 import axios from "axios";
 import { userState } from "../../state/atoms/UserState";
@@ -32,7 +33,7 @@ const ChatScreen = ({ route }) => {
   const secondUser = secondUserInfo ? secondUserInfo : matchUser?.user;
 
   useEffect(() => {
-    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
+    const newSocket = createAuthenticatedSocket();
     setSocket(newSocket);
     newSocket.on("receiveMessage", (data) => {
       const newData = {
@@ -48,24 +49,26 @@ const ChatScreen = ({ route }) => {
     });
     if (!userData || !secondUser) return;
     const getChats = async () => {
-      await axios
-        .get(`${API_BASE_URL}/chat/${userData?._id}/${secondUser?._id}`)
-        .then((res) => {
-          setChatId(res?.data?._id);
-          newSocket.emit("joinChat", { chatId: res?.data?._id });
-          const msg = res?.data?.messages.map((item) => ({
-            ...item,
-            from: item?.sender === userData?._id ? "2" : "1",
-          }));
-          setMessages(msg);
-
-          // Mark all messages as read when joining the chat
-          newSocket.emit("markAsRead", {
-            chatId: res?.data?._id,
-            userId: userData?._id,
-          });
-        })
-        .catch((e) => console.error(e, "fetch chat error"));
+      try {
+        const headers = await authenticatedHeaders();
+        const res = await axios.get(
+          `${API_BASE_URL}/chat/${userData._id}/${secondUser._id}`,
+          { headers }
+        );
+        setChatId(res?.data?._id);
+        newSocket.emit("joinChat", { chatId: res?.data?._id });
+        const msg = res?.data?.messages.map((item) => ({
+          ...item,
+          from: item?.sender === userData?._id ? "2" : "1",
+        }));
+        setMessages(msg);
+        newSocket.emit("markAsRead", {
+          chatId: res?.data?._id,
+          userId: userData?._id,
+        });
+      } catch (error) {
+        console.error(error, "fetch chat error");
+      }
     };
     getChats();
     newSocket.on("messagesCleared", () => {
@@ -77,16 +80,15 @@ const ChatScreen = ({ route }) => {
     return () => {
       if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
       const getUserInfo = async () => {
-        await axios
-          .get(`${API_BASE_URL}/user/${userData?.email}`)
-          .then((res) => {
-            setUserMongoData(res.data);
-          })
-          .catch((e) =>
-            console.error(e, "Error message: mongodb user details")
-          );
+        try {
+          const headers = await authenticatedHeaders();
+          const res = await axios.get(`${API_BASE_URL}/user/${userData?.email}`, { headers });
+          setUserMongoData(res.data);
+        } catch (error) {
+          console.error(error, "Error message: mongodb user details");
+        }
       };
-      
+
       if (!secondUserInfo) {
         getUserInfo();
       }

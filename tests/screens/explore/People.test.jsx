@@ -12,6 +12,7 @@ let mockSocket;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
+jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
 jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
 jest.mock("@expo/vector-icons/AntDesign", () => {
   const React = require("react");
@@ -43,7 +44,7 @@ describe("People", () => {
     axios.get.mockResolvedValue({ data: [] });
     await renderPeople({ _id: "me-1", friends: [] });
     expect(screen.getByText("Search to find people like you")).toBeOnTheScreen();
-    expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/unread-messages/me-1");
+    expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/unread-messages/me-1", { headers: { Authorization: "Bearer test-token" } });
   });
 
   it("loads unread counts and opens friend profiles and chats", async () => {

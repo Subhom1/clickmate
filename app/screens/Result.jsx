@@ -12,6 +12,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
+import { authenticatedHeaders } from "../network/auth";
 import { userState } from "../state/atoms/UserState";
 import { chatState } from "../state/atoms/ChatState";
 import { API_BASE_URL } from "../../constant";
@@ -31,16 +32,17 @@ export default function Result({ route }) {
       return;
     }
 
-    await axios
-      .post(`${API_BASE_URL}/create-chat`, {
+    try {
+      const headers = await authenticatedHeaders();
+      const res = await axios.post(`${API_BASE_URL}/create-chat`, {
         user1Id: userData._id,
         user2Id: matchedUser._id,
-      })
-      .then((res) => {
-        setChatId(res?.data?._id);
-        navigation.navigate("ChatScreen", { platform });
-      })
-      .catch((e) => console.error(e, "Error creating chat"));
+      }, { headers });
+      setChatId(res?.data?._id);
+      navigation.navigate("ChatScreen", { platform });
+    } catch (error) {
+      console.error(error, "Error creating chat");
+    }
   };
   return (
     <SafeAreaView className="flex-1">

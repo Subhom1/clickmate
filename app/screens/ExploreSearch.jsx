@@ -17,7 +17,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";
 import { matchState } from "../state/atoms/MatchState";
 import { useAtomValue, useSetAtom } from "jotai";
-import io from "socket.io-client";
+import { createAuthenticatedSocket } from "../network/socket";
 
 export default function ExploreSearch({ route }) {
   const [socket, setSocket] = useState(null);
@@ -33,7 +33,7 @@ export default function ExploreSearch({ route }) {
       return;
     }
 
-    const newSocket = io(API_BASE_URL, { reconnectionAttempts: 5 });
+    const newSocket = createAuthenticatedSocket();
     setSocket(newSocket);
     const submitSearch = () => {
       setNoResult(false);
