@@ -161,7 +161,6 @@ it("uses a suggested tag as the submitted search query", async () => {
   });
 });
 
-
 it("clears a stale match for an empty result and expires the no-result feedback after ten seconds", async () => {
   const realSetTimeout = global.setTimeout;
   let expireFeedback;
@@ -183,7 +182,6 @@ it("clears a stale match for an empty result and expires the no-result feedback 
   await act(async () => expireFeedback());
   expect(screen.queryByText(/No Users found/)).toBeNull();
 });
-
 
 it("submits a selected local date and time with the device zone and selected-date offset", async () => {
   process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
@@ -272,10 +270,13 @@ it("announces both unselected and selected schedule values to assistive technolo
   await fireEvent.press(screen.getByLabelText("Choose a date"));
   await fireEvent.press(screen.getByText("Apply date"));
   await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByLabelText("10 o'clock"));
+  await fireEvent.press(screen.getByLabelText("00 minutes"));
+  await fireEvent.press(screen.getByLabelText("AM"));
   await fireEvent.press(screen.getByText("Apply time"));
   const selected = new Date();
   const expectedDate = selected.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const expectedTime = `${selected.getHours() % 12 || 12}:${String(Math.floor(selected.getMinutes() / 5) * 5).padStart(2, "0")} ${selected.getHours() < 12 ? "AM" : "PM"}`;
+  const expectedTime = "10:00 AM";
   expect(screen.getByLabelText("Choose a date").props.accessibilityValue.text).toBe(expectedDate);
   expect(screen.getByLabelText("Choose a time").props.accessibilityValue.text).toBe(expectedTime);
 });
