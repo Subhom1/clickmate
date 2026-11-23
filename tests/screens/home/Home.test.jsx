@@ -173,3 +173,57 @@ it("clears a stale match for an empty result and expires the no-result feedback 
   await act(async () => jest.advanceTimersByTime(1));
   expect(screen.queryByText(/No Users found/)).toBeNull();
 });
+
+it("submits a selected local date and time with the device zone and selected-date offset", async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2027-01-15T09:00:00Z"));
+  const selected = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const date = `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())}`;
+  const time = `${pad(selected.getHours())}:${pad(Math.floor(selected.getMinutes() / 5) * 5)}`;
+  const { resolveLocalSchedule } = require("../../../app/search/localSchedule");
+  const zone = resolveLocalSchedule(date, time);
+  expect(zone.error).toBeUndefined();
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {
+    userId: "me-1", query: "coffee", date, time, ...zone,
+  });
+  expect(screen.getByText(`Time zone: ${zone.timeZone}`)).toBeOnTheScreen();
+});
+
+it("keeps a date-only search compatible with older clients", async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2027-01-15T09:00:00Z"));
+  const selected = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const date = `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())}`;
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", { userId: "me-1", query: "coffee", date });
+});
+
+it.each([
+  ["nonexistent", "This time does not exist because clocks change. Please choose another time."],
+  ["ambiguous", "This time occurs twice because clocks change. Please choose another time."],
+])("prevents submission for a %s local time", async (error, message) => {
+  const helper = require("../../../app/search/localSchedule");
+  jest.spyOn(helper, "resolveLocalSchedule").mockReturnValue({ error });
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(Alert.alert).toHaveBeenCalledWith("Choose another time", message);
+  expect(mockSocket.emit).not.toHaveBeenCalled();
+});

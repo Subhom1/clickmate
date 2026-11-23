@@ -20,9 +20,15 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { matchState } from "../state/atoms/MatchState";
 import { useNavigation } from "@react-navigation/native";
 import ToggleSwitch from "../components/ToggleSwitch.js";
+import SearchSchedulePicker from "../components/SearchSchedulePicker";
+import { resolveLocalSchedule } from "../search/localSchedule";
 
 export default function Home({ route }) {
   const [searchText, setSearchText] = useState("");
+  const [searchDate, setSearchDate] = useState(null);
+  const [searchTime, setSearchTime] = useState(null);
+  let deviceTimeZone;
+  try { deviceTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* handled on submit */ }
   const userData = useAtomValue(userState);
   const [searchLoading, setSearchLoading] = useState(false);
   const [noResult, setNoResult] = useState(false);
@@ -88,13 +94,32 @@ export default function Home({ route }) {
       Alert.alert("Connection unavailable", "Please try again in a moment");
       return;
     }
+    let zone = {};
+    if (searchDate && searchTime) {
+      zone = resolveLocalSchedule(searchDate, searchTime);
+      if (zone.error) {
+        const message = zone.error === "ambiguous"
+          ? "This time occurs twice because clocks change. Please choose another time."
+          : zone.error === "nonexistent"
+            ? "This time does not exist because clocks change. Please choose another time."
+            : "Your selected date, time or device time zone could not be used. Please check them.";
+        Alert.alert("Choose another time", message);
+        return;
+      }
+    }
     Keyboard.dismiss();
     setSearchLoading(true);
     setNoResult(false);
     if (noResultTimerRef.current) {
       clearTimeout(noResultTimerRef.current);
     }
-    socket.emit("submit_keyword", { userId: userData._id, query });
+    socket.emit("submit_keyword", {
+      userId: userData._id,
+      query,
+      ...(searchDate ? { date: searchDate } : {}),
+      ...(searchTime ? { time: searchTime } : {}),
+      ...zone,
+    });
   };
 
   const handleCancelSearch = () => {
@@ -165,6 +190,13 @@ export default function Home({ route }) {
               <Icon2 name="info" style={{ margin: 10 }} /> The more descriptive
               your query, the more accurate the result will be.
             </Text>
+
+            <View className="mt-5">
+              <Text className="text-gray-500">Date and time (optional)</Text>
+              <SearchSchedulePicker mode="date" value={searchDate} onChange={setSearchDate} />
+              <SearchSchedulePicker mode="time" value={searchTime} onChange={setSearchTime} />
+              <Text className="text-gray-500 text-xs">Time zone: {deviceTimeZone || "Unavailable"}</Text>
+            </View>
 
             <View className="flex-row justify-evenly">
               {/* {!searchLoading && ( */}
