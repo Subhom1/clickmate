@@ -77,6 +77,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
 
   const year = displayMonth.getFullYear();
   const month = displayMonth.getMonth();
+  const monthLabel = displayMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
   const leadingDays = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = Array.from({ length: Math.ceil((leadingDays + daysInMonth) / 7) * 7 }, (_, index) => {
@@ -126,7 +127,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
                     <Icon name="chevron-left" size={21} color={GREEN} />
                   </Pressable>
                   <Text style={styles.monthText}>
-                    {displayMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+                    {monthLabel}
                   </Text>
                   <Pressable onPress={() => setDisplayMonth(new Date(year, month + 1, 1))} accessibilityRole="button" accessibilityLabel="Next month" style={styles.monthButton}>
                     <Icon name="chevron-right" size={21} color={GREEN} />
@@ -142,7 +143,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
                           <Pressable
                             onPress={() => setDraft(dateValue)}
                             accessibilityRole="button"
-                            accessibilityLabel={`${day} ${displayMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`}
+                            accessibilityLabel={`${day} ${monthLabel}`}
                             accessibilityState={{ selected: draft === dateValue }}
                             style={[styles.dayButton, draft === dateValue && styles.activeChoice]}
                           >
