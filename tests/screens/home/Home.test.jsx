@@ -203,6 +203,7 @@ it("submits a selected local date and time with the device zone and selected-dat
 });
 
 it("keeps a date-only search compatible with older clients", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
   jest.useFakeTimers();
   jest.setSystemTime(new Date("2027-01-15T09:00:00Z"));
   const selected = new Date();
@@ -234,13 +235,22 @@ it.each([
   expect(mockSocket.emit).not.toHaveBeenCalled();
 });
 
-it.each([undefined, "false", "TRUE"])("blocks a complete schedule when the timezone rollout flag is %s", async (flag) => {
+it.each([undefined, "false", "TRUE"])("hides schedule controls when the timezone rollout flag is %s", async (flag) => {
   if (flag !== undefined) process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = flag;
+  await renderHome();
+  expect(screen.queryByLabelText("Choose a date")).toBeNull();
+  expect(screen.queryByLabelText("Choose a time")).toBeNull();
+  expect(screen.queryByText(/Time zone:/)).toBeNull();
+});
+
+it("defensively blocks a complete schedule if the rollout gate is disabled before submission", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
   await renderHome();
   await fireEvent.press(screen.getByLabelText("Choose a date"));
   await fireEvent.press(screen.getByText("Apply date"));
   await fireEvent.press(screen.getByLabelText("Choose a time"));
   await fireEvent.press(screen.getByText("Apply time"));
+  delete process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
   await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
   await fireEvent.press(screen.getByText("Search"));
   expect(Alert.alert).toHaveBeenCalledWith("Scheduled search unavailable", "Date and time search is not available yet. Clear one or both fields to continue.");

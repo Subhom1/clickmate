@@ -27,6 +27,7 @@ export default function Home({ route }) {
   const [searchText, setSearchText] = useState("");
   const [searchDate, setSearchDate] = useState(null);
   const [searchTime, setSearchTime] = useState(null);
+  const timeZoneSearchEnabled = process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED === "true";
   let deviceTimeZone;
   try { deviceTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* handled on submit */ }
   const userData = useAtomValue(userState);
@@ -195,12 +196,12 @@ export default function Home({ route }) {
               your query, the more accurate the result will be.
             </Text>
 
-            <View className="mt-5">
+            {timeZoneSearchEnabled && <View className="mt-5">
               <Text className="text-gray-500">Date and time (optional)</Text>
               <SearchSchedulePicker mode="date" value={searchDate} onChange={setSearchDate} />
               <SearchSchedulePicker mode="time" value={searchTime} onChange={setSearchTime} />
               <Text className="text-gray-500 text-xs">Time zone: {deviceTimeZone || "Unavailable"}</Text>
-            </View>
+            </View>}
 
             <View className="flex-row justify-evenly">
               {/* {!searchLoading && ( */}
