@@ -198,6 +198,7 @@ export default function Home({ route }) {
 
             {timeZoneSearchEnabled && <View className="mt-5">
               <Text className="text-gray-500">Date and time (optional)</Text>
+              <Text className="text-gray-500 text-xs">Choose both a date and time to match across time zones.</Text>
               <SearchSchedulePicker mode="date" value={searchDate} onChange={setSearchDate} />
               <SearchSchedulePicker mode="time" value={searchTime} onChange={setSearchTime} />
               <Text className="text-gray-500 text-xs">Time zone: {deviceTimeZone || "Unavailable"}</Text>

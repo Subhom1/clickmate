@@ -90,6 +90,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={isDate ? "Choose a date" : "Choose a time"}
+        accessibilityValue={{ text: isDate ? formatSearchDate(value) : formatSearchTime(value) }}
         onPress={open}
         style={[styles.field, value && styles.selectedField]}
       >
@@ -142,6 +143,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
                             onPress={() => setDraft(dateValue)}
                             accessibilityRole="button"
                             accessibilityLabel={`${day} ${displayMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`}
+                            accessibilityState={{ selected: draft === dateValue }}
                             style={[styles.dayButton, draft === dateValue && styles.activeChoice]}
                           >
                             <Text style={[styles.dayText, dateValue === today && styles.todayText, draft === dateValue && styles.activeText]}>{day}</Text>
@@ -160,7 +162,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
                     <Text style={styles.columnLabel}>HOUR</Text>
                     <ScrollView style={styles.timeScroll} contentContainerStyle={styles.timeOptions} nestedScrollEnabled>
                       {Array.from({ length: 12 }, (_, index) => index + 1).map((hour) => (
-                        <Pressable key={hour} onPress={() => setTime(hour, draftMinute, period)} style={[styles.timeChoice, hour12 === hour && styles.activeChoice]} accessibilityRole="button" accessibilityLabel={`${hour} o'clock`}>
+                        <Pressable key={hour} onPress={() => setTime(hour, draftMinute, period)} style={[styles.timeChoice, hour12 === hour && styles.activeChoice]} accessibilityRole="button" accessibilityLabel={`${hour} o'clock`} accessibilityState={{ selected: hour12 === hour }}>
                           <Text style={[styles.choiceText, hour12 === hour && styles.activeText]}>{pad(hour)}</Text>
                         </Pressable>
                       ))}
@@ -170,7 +172,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
                     <Text style={styles.columnLabel}>MINUTE</Text>
                     <ScrollView style={styles.timeScroll} contentContainerStyle={styles.timeOptions} nestedScrollEnabled>
                       {MINUTES.map((minute) => (
-                        <Pressable key={minute} onPress={() => setTime(hour12, minute, period)} style={[styles.timeChoice, draftMinute === minute && styles.activeChoice]} accessibilityRole="button" accessibilityLabel={`${pad(minute)} minutes`}>
+                        <Pressable key={minute} onPress={() => setTime(hour12, minute, period)} style={[styles.timeChoice, draftMinute === minute && styles.activeChoice]} accessibilityRole="button" accessibilityLabel={`${pad(minute)} minutes`} accessibilityState={{ selected: draftMinute === minute }}>
                           <Text style={[styles.choiceText, draftMinute === minute && styles.activeText]}>{pad(minute)}</Text>
                         </Pressable>
                       ))}
@@ -179,7 +181,7 @@ export default function SearchSchedulePicker({ mode, value, onChange }) {
                   <View style={styles.periodColumn}>
                     <Text style={styles.columnLabel}>PERIOD</Text>
                     { ["AM", "PM"].map((item) => (
-                      <Pressable key={item} onPress={() => setTime(hour12, draftMinute, item)} style={[styles.timeChoice, period === item && styles.activeChoice]} accessibilityRole="button" accessibilityLabel={item}>
+                      <Pressable key={item} onPress={() => setTime(hour12, draftMinute, item)} style={[styles.timeChoice, period === item && styles.activeChoice]} accessibilityRole="button" accessibilityLabel={item} accessibilityState={{ selected: period === item }}>
                         <Text style={[styles.choiceText, period === item && styles.activeText]}>{item}</Text>
                       </Pressable>
                     ))}

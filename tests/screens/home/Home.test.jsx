@@ -256,3 +256,44 @@ it("defensively blocks a complete schedule if the rollout gate is disabled befor
   expect(Alert.alert).toHaveBeenCalledWith("Scheduled search unavailable", "Date and time search is not available yet. Clear one or both fields to continue.");
   expect(mockSocket.emit).not.toHaveBeenCalled();
 });
+
+it("announces both unselected and selected schedule values to assistive technology", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2027-01-15T09:00:00Z"));
+  await renderHome();
+  expect(screen.getByLabelText("Choose a date").props.accessibilityValue).toEqual({ text: "Choose a date" });
+  expect(screen.getByLabelText("Choose a time").props.accessibilityValue).toEqual({ text: "Choose a time" });
+  expect(screen.getByText("Choose both a date and time to match across time zones.")).toBeOnTheScreen();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  const selected = new Date();
+  const expectedDate = selected.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const minutes = String(Math.floor(selected.getMinutes() / 5) * 5).padStart(2, "0");
+  const expectedTime = `${selected.getHours() % 12 || 12}:${minutes} ${selected.getHours() < 12 ? "AM" : "PM"}`;
+  expect(screen.getByLabelText("Choose a date").props.accessibilityValue.text).toBe(expectedDate);
+  expect(screen.getByLabelText("Choose a time").props.accessibilityValue.text).toBe(expectedTime);
+});
+
+it("marks the current calendar and time choices as selected for assistive technology", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2027-01-15T09:00:00Z"));
+  const month = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  const day = screen.getByLabelText(`10 ${month}`);
+  expect(day.props.accessibilityState.selected).toBe(false);
+  await fireEvent.press(day);
+  expect(screen.getByLabelText(`10 ${month}`).props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByLabelText("1 o'clock"));
+  expect(screen.getByLabelText("1 o'clock").props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByLabelText("25 minutes"));
+  expect(screen.getByLabelText("25 minutes").props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByLabelText("PM"));
+  expect(screen.getByLabelText("PM").props.accessibilityState.selected).toBe(true);
+});
