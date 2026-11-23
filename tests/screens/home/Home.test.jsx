@@ -9,6 +9,7 @@ import { createSocketMock } from "../../mocks/socket";
 
 const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
+const initialTimezoneSearchFlag = process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
@@ -31,6 +32,7 @@ function MatchProbe() {
 }
 
 beforeEach(() => {
+  delete process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
   jest.clearAllMocks();
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
   jest.spyOn(console, "log").mockImplementation(() => {});
@@ -39,6 +41,8 @@ beforeEach(() => {
   mockSocket.connected = true;
 });
 afterEach(() => {
+  if (initialTimezoneSearchFlag === undefined) delete process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
+  else process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = initialTimezoneSearchFlag;
   jest.useRealTimers();
   jest.restoreAllMocks();
 });
@@ -158,7 +162,12 @@ it("uses a suggested tag as the submitted search query", async () => {
 });
 
 it("clears a stale match for an empty result and expires the no-result feedback after ten seconds", async () => {
-  jest.useFakeTimers();
+  const realSetTimeout = global.setTimeout;
+  let expireFeedback;
+  const setTimeoutSpy = jest.spyOn(global, "setTimeout").mockImplementation((callback, delay, ...args) => {
+    if (delay === 10000) { expireFeedback = callback; return 0; }
+    return realSetTimeout(callback, delay, ...args);
+  });
   const { store } = await renderHome();
   await act(async () => store.set(matchState, { user: { _id: "old-1", fullname: "Old Friend" } }));
   await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
@@ -168,8 +177,126 @@ it("clears a stale match for an empty result and expires the no-result feedback 
   expect(store.get(matchState)).toBeNull();
   expect(mockNavigation.navigate).not.toHaveBeenCalled();
   expect(screen.getByText("Search")).toBeOnTheScreen();
-  await act(async () => jest.advanceTimersByTime(9999));
+  expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 10000);
   expect(screen.getByText(/No Users found/)).toBeOnTheScreen();
-  await act(async () => jest.advanceTimersByTime(1));
+  await act(async () => expireFeedback());
   expect(screen.queryByText(/No Users found/)).toBeNull();
+});
+
+it("submits a selected local date and time with the device zone and selected-date offset", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  const selected = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const date = `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())}`;
+  const time = "10:00";
+  const { resolveLocalSchedule } = require("../../../app/search/localSchedule");
+  const zone = resolveLocalSchedule(date, time);
+  expect(zone.error).toBeUndefined();
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByLabelText("10 o'clock"));
+  await fireEvent.press(screen.getByLabelText("00 minutes"));
+  await fireEvent.press(screen.getByLabelText("AM"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {
+    userId: "me-1", query: "coffee", date, time, ...zone,
+  });
+  expect(screen.getByText(`Time zone: ${zone.timeZone}`)).toBeOnTheScreen();
+});
+
+it("keeps a date-only search compatible with older clients", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  const selected = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const date = `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())}`;
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", { userId: "me-1", query: "coffee", date });
+});
+
+it.each([
+  ["nonexistent", "This time does not exist because clocks change. Please choose another time."],
+  ["ambiguous", "This time occurs twice because clocks change. Please choose another time."],
+])("prevents submission for a %s local time", async (error, message) => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  const helper = require("../../../app/search/localSchedule");
+  jest.spyOn(helper, "resolveLocalSchedule").mockReturnValue({ error });
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(Alert.alert).toHaveBeenCalledWith("Choose another time", message);
+  expect(mockSocket.emit).not.toHaveBeenCalled();
+});
+
+it.each([undefined, "false", "TRUE"])("hides schedule controls when the timezone rollout flag is %s", async (flag) => {
+  if (flag !== undefined) process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = flag;
+  await renderHome();
+  expect(screen.queryByLabelText("Choose a date")).toBeNull();
+  expect(screen.queryByLabelText("Choose a time")).toBeNull();
+  expect(screen.queryByText(/Time zone:/)).toBeNull();
+});
+
+it("defensively blocks a complete schedule if the rollout gate is disabled before submission", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  delete process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(Alert.alert).toHaveBeenCalledWith("Scheduled search unavailable", "Date and time search is not available yet. Clear one or both fields to continue.");
+  expect(mockSocket.emit).not.toHaveBeenCalled();
+});
+
+it("announces both unselected and selected schedule values to assistive technology", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  await renderHome();
+  expect(screen.getByLabelText("Choose a date").props.accessibilityValue).toEqual({ text: "Choose a date" });
+  expect(screen.getByLabelText("Choose a time").props.accessibilityValue).toEqual({ text: "Choose a time" });
+  expect(screen.getByText("Choose both a date and time to match across time zones.")).toBeOnTheScreen();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByLabelText("10 o'clock"));
+  await fireEvent.press(screen.getByLabelText("00 minutes"));
+  await fireEvent.press(screen.getByLabelText("AM"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  const selected = new Date();
+  const expectedDate = selected.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const expectedTime = "10:00 AM";
+  expect(screen.getByLabelText("Choose a date").props.accessibilityValue.text).toBe(expectedDate);
+  expect(screen.getByLabelText("Choose a time").props.accessibilityValue.text).toBe(expectedTime);
+});
+
+it("marks the current calendar and time choices as selected for assistive technology", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
+  const month = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  const dayValue = new Date().getDate() === 10 ? 11 : 10;
+  const day = screen.getByLabelText(`${dayValue} ${month}`);
+  expect(day.props.accessibilityState.selected).toBe(false);
+  await fireEvent.press(day);
+  expect(screen.getByLabelText(`${dayValue} ${month}`).props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByLabelText("1 o'clock"));
+  expect(screen.getByLabelText("1 o'clock").props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByLabelText("25 minutes"));
+  expect(screen.getByLabelText("25 minutes").props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByLabelText("PM"));
+  expect(screen.getByLabelText("PM").props.accessibilityState.selected).toBe(true);
 });
