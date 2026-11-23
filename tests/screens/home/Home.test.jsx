@@ -9,6 +9,7 @@ import { createSocketMock } from "../../mocks/socket";
 
 const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
+const initialTimezoneSearchFlag = process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockNavigation }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
@@ -31,6 +32,7 @@ function MatchProbe() {
 }
 
 beforeEach(() => {
+  delete process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
   jest.clearAllMocks();
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
   jest.spyOn(console, "log").mockImplementation(() => {});
@@ -39,6 +41,8 @@ beforeEach(() => {
   mockSocket.connected = true;
 });
 afterEach(() => {
+  if (initialTimezoneSearchFlag === undefined) delete process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED;
+  else process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = initialTimezoneSearchFlag;
   jest.useRealTimers();
   jest.restoreAllMocks();
 });
@@ -175,6 +179,7 @@ it("clears a stale match for an empty result and expires the no-result feedback 
 });
 
 it("submits a selected local date and time with the device zone and selected-date offset", async () => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
   jest.useFakeTimers();
   jest.setSystemTime(new Date("2027-01-15T09:00:00Z"));
   const selected = new Date();
@@ -215,6 +220,7 @@ it.each([
   ["nonexistent", "This time does not exist because clocks change. Please choose another time."],
   ["ambiguous", "This time occurs twice because clocks change. Please choose another time."],
 ])("prevents submission for a %s local time", async (error, message) => {
+  process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = "true";
   const helper = require("../../../app/search/localSchedule");
   jest.spyOn(helper, "resolveLocalSchedule").mockReturnValue({ error });
   await renderHome();
@@ -225,5 +231,18 @@ it.each([
   await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
   await fireEvent.press(screen.getByText("Search"));
   expect(Alert.alert).toHaveBeenCalledWith("Choose another time", message);
+  expect(mockSocket.emit).not.toHaveBeenCalled();
+});
+
+it.each([undefined, "false", "TRUE"])("blocks a complete schedule when the timezone rollout flag is %s", async (flag) => {
+  if (flag !== undefined) process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED = flag;
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
+  await fireEvent.press(screen.getByText("Search"));
+  expect(Alert.alert).toHaveBeenCalledWith("Scheduled search unavailable", "Date and time search is not available yet. Clear one or both fields to continue.");
   expect(mockSocket.emit).not.toHaveBeenCalled();
 });

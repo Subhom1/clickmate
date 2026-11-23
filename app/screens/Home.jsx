@@ -96,6 +96,10 @@ export default function Home({ route }) {
     }
     let zone = {};
     if (searchDate && searchTime) {
+      if (process.env.EXPO_PUBLIC_TIMEZONE_SEARCH_ENABLED !== "true") {
+        Alert.alert("Scheduled search unavailable", "Date and time search is not available yet. Clear one or both fields to continue.");
+        return;
+      }
       zone = resolveLocalSchedule(searchDate, searchTime);
       if (zone.error) {
         const message = zone.error === "ambiguous"
