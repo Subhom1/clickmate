@@ -10,7 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import Header from "./Header";
 import MessageInputBox from "./MessageInputBox";
 import MessagesList from "./MessagesList";
-import { createAuthenticatedSocket } from "../../network/socket";
+import { acquireAuthenticatedSocket, releaseAuthenticatedSocket } from "../../network/socket";
 import { authenticatedHeaders } from "../../network/auth";
 import { useAtom, useSetAtom } from "jotai";
 import axios from "axios";
@@ -42,9 +42,10 @@ const ChatScreen = ({ route }) => {
   const onProfilePress = secondUser?._id || secondUser?.email ? openProfile : undefined;
 
   useEffect(() => {
-    const newSocket = createAuthenticatedSocket();
+    if (!userData?._id || !secondUser?._id) return;
+    const newSocket = acquireAuthenticatedSocket(userData._id);
     setSocket(newSocket);
-    newSocket.on("receiveMessage", (data) => {
+    const onReceiveMessage = (data) => {
       const newData = {
         ...data,
         from: data?.sender === userData?._id ? "2" : "1",
@@ -55,8 +56,8 @@ const ChatScreen = ({ route }) => {
         chatId,
         userId: userData?._id,
       });
-    });
-    if (!userData || !secondUser) return;
+    };
+    newSocket.on("receiveMessage", onReceiveMessage);
     const getChats = async () => {
       try {
         const headers = await authenticatedHeaders();
@@ -80,12 +81,13 @@ const ChatScreen = ({ route }) => {
       }
     };
     getChats();
-    newSocket.on("messagesCleared", () => {
+    const onMessagesCleared = () => {
       setShowClearNotice(true);
       if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
       clearNoticeTimer.current = setTimeout(() => setShowClearNotice(false), 3500);
       getChats();
-    });
+    };
+    newSocket.on("messagesCleared", onMessagesCleared);
     return () => {
       if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
       const getUserInfo = async () => {
@@ -101,8 +103,10 @@ const ChatScreen = ({ route }) => {
       if (!secondUserInfo) {
         getUserInfo();
       }
-      newSocket.off("receiveMessage");
-      newSocket.disconnect();
+      // Remove only our handlers; other screens still use this socket.
+      newSocket.off("receiveMessage", onReceiveMessage);
+      newSocket.off("messagesCleared", onMessagesCleared);
+      releaseAuthenticatedSocket(userData._id, newSocket);
     };
   }, []);
 

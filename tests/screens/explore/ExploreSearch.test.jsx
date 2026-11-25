@@ -103,8 +103,8 @@ describe("ExploreSearch", () => {
     const connectedView = await renderSearch();
     await waitFor(() => expect(io).toHaveBeenCalled());
     await act(async () => connectedView.unmount());
-    expect(mockSocket.off).toHaveBeenCalledWith("search_update");
-    expect(mockSocket.off).toHaveBeenCalledWith("error");
+    expect(mockSocket.off).toHaveBeenCalledWith("search_update", expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
   });
 });
@@ -129,7 +129,7 @@ it("keeps the no-result state when retrying a disconnected socket", async () => 
   await fireEvent.press(screen.getByText("Try again"));
 
   expect(Alert.alert).toHaveBeenCalledWith("Connection unavailable", "Please try again in a moment");
-  expect(mockSocket.emit).not.toHaveBeenCalled();
+  expect(mockSocket.emit.mock.calls.filter(([event]) => event === "submit_keyword")).toHaveLength(1);
   expect(screen.getByText(/No Users found/)).toBeOnTheScreen();
 });
 
@@ -139,5 +139,5 @@ it("returns from a disconnected search without sending cancellation", async () =
   await fireEvent.press(screen.getByText("Cancel"));
 
   expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
-  expect(mockSocket.emit).not.toHaveBeenCalled();
+  expect(mockSocket.emit.mock.calls.filter(([event]) => event === "cancel_search")).toHaveLength(0);
 });

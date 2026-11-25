@@ -6,6 +6,7 @@ import io from "socket.io-client";
 import People from "../../../app/screens/People";
 import { userState } from "../../../app/state/atoms/UserState";
 import { createSocketMock } from "../../mocks/socket";
+import { Auth } from "../../../FirebaseConfig";
 
 const mockNavigation = { navigate: jest.fn() };
 let mockSocket;
@@ -15,8 +16,8 @@ jest.mock("@react-navigation/native", () => ({
 }));
 jest.mock("socket.io-client", () => jest.fn(() => mockSocket));
 jest.mock("axios", () => ({ get: jest.fn() }));
-jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn().mockResolvedValue("test-token") } } }));
 jest.mock("../../../constant", () => ({ API_BASE_URL: "http://localhost:5051" }));
+jest.mock("../../../FirebaseConfig", () => ({ Auth: { currentUser: { getIdToken: jest.fn() } } }));
 jest.mock("@expo/vector-icons/AntDesign", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -26,6 +27,7 @@ jest.mock("@expo/vector-icons/AntDesign", () => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockSocket = createSocketMock();
+  Auth.currentUser.getIdToken.mockResolvedValue("fresh-token");
 });
 
 const friends = [{ _id: "friend-1", fullname: "Alex Friend", email: "alex@example.com" }];
@@ -52,7 +54,14 @@ describe("People", () => {
     mockResponses([], []);
     await renderPeople({ _id: "me-1", friends: [] });
     expect(screen.getByText("Search to find people like you")).toBeOnTheScreen();
-    expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/unread-messages/me-1", { headers: { Authorization: "Bearer test-token" } });
+    expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/unread-messages/me-1", {
+      headers: { Authorization: "Bearer fresh-token" },
+    });
+    const [url, options] = io.mock.calls[0];
+    expect(url).toBe("http://localhost:5051");
+    const provideAuth = jest.fn();
+    await options.auth(provideAuth);
+    expect(provideAuth).toHaveBeenCalledWith({ token: "fresh-token" });
   });
 
   it("loads unread counts and opens friend profiles and chats", async () => {
@@ -100,7 +109,7 @@ describe("People", () => {
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
     await act(async () => view.unmount());
-    expect(mockSocket.off).toHaveBeenCalledWith("updateUnreadCounts");
+    expect(mockSocket.off).toHaveBeenCalledWith("updateUnreadCounts", expect.any(Function));
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
   });
 });
@@ -108,14 +117,15 @@ describe("People", () => {
 
 it("preserves friends after an unread request fails and recovers on a socket update", async () => {
   const error = new Error("offline");
-  jest.spyOn(console, "error").mockImplementation(() => {});
+  const logError = jest.spyOn(console, "error").mockImplementation(() => {});
   let unreadCalls = 0;
   axios.get.mockImplementation((url) => url.includes("/friends")
     ? Promise.resolve({ data: friends })
     : ++unreadCalls === 1 ? Promise.reject(error) : Promise.resolve({ data: [{ userId: "friend-1", count: 3 }] }));
   const { store } = await renderPeople();
 
-  await waitFor(() => expect(console.error).toHaveBeenCalledWith(error));
+  await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+  expect(logError).not.toHaveBeenCalled();
   expect(screen.getByText("Alex Friend")).toBeOnTheScreen();
   expect(store.get(userState).friends).toEqual(friends);
 
@@ -136,4 +146,12 @@ test("clears old unread badges when the server reports no unread messages", asyn
   await act(async () => mockSocket.serverEmit("updateUnreadCounts"));
   await waitFor(() => expect(screen.queryByText("2")).toBeNull());
   expect(store.get(userState).friends).toEqual(friends);
+});
+
+it("skips the unread request when the Firebase session has no token", async () => {
+  Auth.currentUser.getIdToken.mockResolvedValue(null);
+  await renderPeople();
+  await waitFor(() => expect(Auth.currentUser.getIdToken).toHaveBeenCalled());
+  expect(axios.get).not.toHaveBeenCalled();
+  expect(screen.getByText("Alex Friend")).toBeOnTheScreen();
 });

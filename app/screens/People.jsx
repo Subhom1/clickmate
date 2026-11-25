@@ -11,7 +11,7 @@ import { useAtomValue } from "jotai";
 import { userState } from "../state/atoms/UserState";
 import Icon from "@expo/vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
-import { createAuthenticatedSocket } from "../network/socket";
+import { acquireAuthenticatedSocket, releaseAuthenticatedSocket } from "../network/socket";
 import { authenticatedHeaders } from "../network/auth";
 import axios from "axios";
 import { API_BASE_URL } from "../../constant";
@@ -24,31 +24,27 @@ export default function People({ route }) {
   const navigation = useNavigation();
   useFreshFriends(userData?._id);
   useEffect(() => {
+    if (!userData?._id || !API_BASE_URL) return;
     let active = true;
     setUserUnreadArr(null);
-    const newSocket = createAuthenticatedSocket();
+    const newSocket = acquireAuthenticatedSocket(userData._id);
+
     const getUnreadMsgs = async () => {
-      if (!userData?._id) return;
       try {
         const headers = await authenticatedHeaders();
         const res = await axios.get(`${API_BASE_URL}/unread-messages/${userData._id}`, { headers });
         if (active) setUserUnreadArr(res.data);
-      } catch (error) {
-        console.error(error);
+      } catch {
+        // Keep friends usable when unread counts cannot load.
       }
     };
-    // Listen for updates to unread counts
-    newSocket.on("updateUnreadCounts", () => {
-      getUnreadMsgs();
-    });
-    if (userData?._id) {
-      getUnreadMsgs();
-    }
+    newSocket.on("updateUnreadCounts", getUnreadMsgs);
+    getUnreadMsgs();
 
     return () => {
       active = false;
-      newSocket.off("updateUnreadCounts");
-      newSocket.disconnect();
+      newSocket.off("updateUnreadCounts", getUnreadMsgs);
+      releaseAuthenticatedSocket(userData._id, newSocket);
     };
   }, [userData?._id]);
 

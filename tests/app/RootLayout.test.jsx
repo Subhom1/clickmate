@@ -33,8 +33,8 @@ jest.mock("@react-navigation/bottom-tabs", () => {
     createBottomTabNavigator: () => ({
       Navigator: ({ children, screenOptions }) =>
         React.createElement(View, { testID: "tab-bar", style: screenOptions.tabBarStyle, tabBarHideOnKeyboard: screenOptions.tabBarHideOnKeyboard }, children),
-      Screen: ({ name, initialParams }) =>
-        React.createElement(Text, null, `${name}:${initialParams?.platform}`),
+      Screen: ({ name, initialParams, options }) =>
+        React.createElement(Text, { accessibilityLabel: options.title }, `${name}:${initialParams?.platform}`),
     }),
   };
 });
@@ -75,11 +75,21 @@ describe("RootLayout", () => {
     await waitFor(() => expect(screen.getByText("Home:ios")).toBeOnTheScreen());
     expect(screen.getByText("Explore:ios")).toBeOnTheScreen();
     expect(screen.getByText("People:ios")).toBeOnTheScreen();
+    expect(screen.getByText("MySpace:ios")).toBeOnTheScreen();
     expect(screen.getByText("Profile:ios")).toBeOnTheScreen();
     expect(screen.getByText("Result:ios")).toBeOnTheScreen();
     expect(screen.getByText("ChatScreen:ios")).toBeOnTheScreen();
     expect(screen.getByText("VisitorProfile:ios")).toBeOnTheScreen();
     expect(screen.getByText("ExploreSearch:ios")).toBeOnTheScreen();
+  });
+
+  it("shows all five tabs in the requested order", async () => {
+    const user = { stsTokenManager: { expirationTime: Date.now() + 60_000 } };
+    await renderLayout(user);
+    const tabs = screen.getByTestId("tab-bar").children;
+    expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual([
+      "Home", "Explore", "Friends", "My Space", "My Account",
+    ]);
   });
 });
 

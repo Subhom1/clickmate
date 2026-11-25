@@ -1,15 +1,16 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import React, { useState } from "react";
+import colors from "../theme/colors";
 
 const ToggleSwitch = () => {
   const [isOn, setIsOn] = useState(true);
   const toggleSwitch = () => {
-    // setIsOn((isOn) => !isOn);
+    // Keep Global selected until local search is supported.
   };
   return (
     <View style={styles.container}>
       <Text
-        style={isOn ? { color: "#67AB0F" } : { color: "#0C4BA5" }}
+        style={isOn ? { color: colors.primary_green } : { color: colors.secondary_blue_deep }}
         className="mr-2 font-bold"
       >
         {isOn ? "Global" : "Local"}
@@ -18,8 +19,8 @@ const ToggleSwitch = () => {
         style={[
           styles.outter,
           isOn
-            ? { justifyContent: "flex-end", backgroundColor: "#67AB0F" }
-            : { justifyContent: "flex-start", backgroundColor: "#0C4BA5" },
+            ? { justifyContent: "flex-end", backgroundColor: colors.primary_green }
+            : { justifyContent: "flex-start", backgroundColor: colors.secondary_blue_deep },
         ]}
         activeOpacity={1}
         onPress={toggleSwitch}
@@ -43,7 +44,7 @@ const styles = StyleSheet.create({
   outter: {
     width: 40,
     height: 23,
-    backgroundColor: "#A7B0AD",
+    backgroundColor: colors.primary_gray,
     borderRadius: 15,
     alignItems: "center",
     flexDirection: "row",

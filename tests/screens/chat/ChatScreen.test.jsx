@@ -137,7 +137,7 @@ describe("ChatScreen", () => {
     expect(await screen.findByText("Alex Friend")).toBeOnTheScreen();
 
     await act(async () => view.unmount());
-    expect(mockSocket.off).toHaveBeenCalledWith("receiveMessage");
+    expect(mockSocket.off).toHaveBeenCalledWith("receiveMessage", expect.any(Function));
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
     await waitFor(() =>
       expect(axios.get).toHaveBeenCalledWith("http://localhost:5051/user/me@example.com", { headers: { Authorization: "Bearer test-token" } })
