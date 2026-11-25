@@ -18,6 +18,7 @@ import ChatScreen from "./app/screens/ChatScreen/ChatScreen";
 import { InitialsCircle } from "./app/components/CreateAvatar";
 import VisitorProfile from "./app/screens/VisitorProfile";
 import ExploreSearch from "./app/screens/ExploreSearch";
+import MySpace from "./app/screens/MySpace";
 
 const Stack = createNativeStackNavigator();
 
@@ -153,7 +154,7 @@ const MyTabs = ({ route }) => {
         name="People"
         component={People}
         options={{
-          title: "People",
+          title: "Friends",
           tabBarIcon: ({ focused }) => (
             <Icon2
               name="people"
@@ -168,10 +169,28 @@ const MyTabs = ({ route }) => {
         initialParams={route.params}
       />
       <Tab.Screen
+        name="MySpace"
+        component={MySpace}
+        options={{
+          title: "My Space",
+          tabBarIcon: ({ focused }) => (
+            <Icon
+              name="grid"
+              size={25}
+              color={focused ? "#67AB0F" : "#A7B0AD"}
+            />
+          ),
+          tabBarActiveTintColor: "#67AB0F",
+          tabBarInactiveTintColor: "#A7B0AD",
+          headerShown: false,
+        }}
+        initialParams={route.params}
+      />
+      <Tab.Screen
         name="Profile"
         component={Profile}
         options={{
-          title: "Profile",
+          title: "My Account",
           tabBarIcon: ({ focused }) => (
             <InitialsCircle
               name={userData ? userData?.fullname : ""}

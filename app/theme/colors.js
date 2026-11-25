@@ -1,0 +1,30 @@
+// Keep Tailwind classes and React Native styles on the same palette.
+const colors = {
+  primary_green: "#67AB0F",
+  primary_green_light: "#95BC54",
+  primary_gray: "#A7B0AD",
+  primary_blue: "#056CE5",
+  primary_red: "#AB0F12",
+  secondary_green: "#233C35",
+  secondary_green_deep: "#2E5B24",
+  secondary_blue_deep: "#0C4BA5",
+  surface: "#FFFFFF",
+  surface_soft: "#F7FAF5",
+  surface_green: "#E8F3E1",
+  surface_blue: "#F0F5FB",
+  surface_red: "#FBEDEE",
+  text_strong: "#1E2D23",
+  text_muted: "#718078",
+  text_subtle: "#96A299",
+  border_soft: "#E4EBE3",
+  border_green: "#E1EBDD",
+  border_green_selected: "#A6CB84",
+  surface_green_selected: "#F1F8EB",
+  surface_neutral: "#F2F5F1",
+  surface_neutral_alt: "#F3F7F1",
+  text_field: "#24342A",
+  text_placeholder: "#89958E",
+  handle: "#D9E2D9",
+};
+
+module.exports = colors;

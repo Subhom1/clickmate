@@ -43,13 +43,13 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-const renderHome = async ({ user = { _id: "me-1" }, connected = true } = {}) => {
+const renderHome = async ({ user = { _id: "me-1" }, connected = true, platform = "ios" } = {}) => {
   mockSocket.connected = connected;
   const store = createStore();
   store.set(userState, user);
   const view = await render(
     <Provider store={store}>
-      <Home route={{ params: { platform: "ios" } }} />
+      <Home route={{ params: { platform } }} />
       <MatchProbe />
     </Provider>
   );
@@ -107,6 +107,13 @@ describe("Home search", () => {
     expect(scroll.props.keyboardDismissMode).toBe("on-drag");
   });
 
+  it("leaves scroll room for the search action above the overlaid tab bar", async () => {
+    await renderHome();
+    const scroll = screen.getByTestId("keyboard-dismiss-scroll");
+    expect(scroll.props.style).toEqual({ flex: 1 });
+    expect(scroll.props.contentContainerStyle.paddingBottom).toBeGreaterThan(90);
+  });
+
   it("reports unavailable socket connections", async () => {
     await renderHome({ connected: false });
     await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "coffee");
@@ -140,8 +147,8 @@ describe("Home search", () => {
     expect(screen.getByText("Search")).toBeOnTheScreen();
 
     await act(async () => view.unmount());
-    expect(mockSocket.off).toHaveBeenCalledWith("search_update");
-    expect(mockSocket.off).toHaveBeenCalledWith("error");
+    expect(mockSocket.off).toHaveBeenCalledWith("search_update", expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
   });
 });
@@ -149,11 +156,11 @@ describe("Home search", () => {
 
 it("uses a suggested tag as the submitted search query", async () => {
   await renderHome();
-  await fireEvent.press(screen.getByText("# weekend escape"));
-  expect(screen.getByPlaceholderText("Type your current mood")).toHaveDisplayValue("weekend escape");
+  await fireEvent.press(screen.getByText("# city tour"));
+  expect(screen.getByPlaceholderText("Type your current mood")).toHaveDisplayValue("city tour");
   await fireEvent.press(screen.getByText("Search"));
   expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {
-    userId: "me-1", query: "weekend escape",
+    userId: "me-1", query: "city tour",
   });
 });
 
@@ -172,4 +179,43 @@ it("clears a stale match for an empty result and expires the no-result feedback 
   expect(screen.getByText(/No Users found/)).toBeOnTheScreen();
   await act(async () => jest.advanceTimersByTime(1));
   expect(screen.queryByText(/No Users found/)).toBeNull();
+});
+
+it("includes selected date and time as separate search parameters", async () => {
+  await renderHome();
+  await fireEvent.changeText(screen.getByPlaceholderText("Type your current mood"), "  coffee meetup  ");
+
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByLabelText("Next month"));
+  const nextMonth = new Date();
+  nextMonth.setDate(1);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  await fireEvent.press(screen.getByLabelText(`18 ${nextMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`));
+  await fireEvent.press(screen.getByText("Apply date"));
+
+  await fireEvent.press(screen.getByLabelText("Choose a time"));
+  await fireEvent.press(screen.getByLabelText("9 o'clock"));
+  await fireEvent.press(screen.getByLabelText("30 minutes"));
+  await fireEvent.press(screen.getByLabelText("PM"));
+  await fireEvent.press(screen.getByText("Apply time"));
+  await fireEvent.press(screen.getByText("Search"));
+
+  const date = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-18`;
+  expect(mockSocket.emit).toHaveBeenCalledWith("submit_keyword", {
+    userId: "me-1",
+    query: "coffee meetup",
+    date,
+    time: "21:30",
+  });
+});
+
+it("lets the user clear a selected schedule value", async () => {
+  await renderHome();
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Apply date"));
+  expect(screen.queryByText("Choose a date")).toBeNull();
+
+  await fireEvent.press(screen.getByLabelText("Choose a date"));
+  await fireEvent.press(screen.getByText("Clear"));
+  expect(screen.getByText("Choose a date")).toBeOnTheScreen();
 });

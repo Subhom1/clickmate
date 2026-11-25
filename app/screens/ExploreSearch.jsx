@@ -16,7 +16,7 @@ import Icon from "@expo/vector-icons/MaterialIcons";
 import { userState } from "../state/atoms/UserState";
 import { matchState } from "../state/atoms/MatchState";
 import { useAtomValue, useSetAtom } from "jotai";
-import { createAuthenticatedSocket } from "../network/socket";
+import { acquireAuthenticatedSocket, releaseAuthenticatedSocket } from "../network/socket";
 
 export default function ExploreSearch({ route }) {
   const [socket, setSocket] = useState(null);
@@ -32,8 +32,9 @@ export default function ExploreSearch({ route }) {
       return;
     }
 
-    const newSocket = createAuthenticatedSocket();
+    const newSocket = acquireAuthenticatedSocket(userData._id);
     setSocket(newSocket);
+    let submittedOnConnection = false;
     const submitSearch = () => {
       setNoResult(false);
       newSocket.emit("submit_keyword", {
@@ -42,11 +43,15 @@ export default function ExploreSearch({ route }) {
       });
     };
 
-    newSocket.on("connect", () => {
+    const onConnect = () => {
       console.log("Client Connected to WebSocket server");
-      submitSearch();
-    });
-    newSocket.on("search_update", (data) => {
+      if (!submittedOnConnection) {
+        submittedOnConnection = true;
+        submitSearch();
+      }
+    };
+    const onDisconnect = () => { submittedOnConnection = false; };
+    const onSearchUpdate = (data) => {
       const match = data?.matches;
 
       if (match?.user?._id) {
@@ -56,16 +61,24 @@ export default function ExploreSearch({ route }) {
         setMatchResult(null);
         setNoResult(true);
       }
-    });
-    newSocket.on("error", (error) => {
+    };
+    const onError = (error) => {
       console.error("Error from server:", error.message);
       Alert.alert("Error", error.message || "Something went wrong");
-    });
+    };
+    newSocket.on("connect", onConnect);
+    newSocket.on("disconnect", onDisconnect);
+    newSocket.on("search_update", onSearchUpdate);
+    newSocket.on("error", onError);
+    // Another screen may have opened the connection already.
+    if (newSocket.connected) onConnect();
 
     return () => {
-      newSocket.off("search_update");
-      newSocket.off("error");
-      newSocket.disconnect();
+      newSocket.off("connect", onConnect);
+      newSocket.off("disconnect", onDisconnect);
+      newSocket.off("search_update", onSearchUpdate);
+      newSocket.off("error", onError);
+      releaseAuthenticatedSocket(userData._id, newSocket);
     };
   }, [navigation, query, setMatchResult, userData?._id]);
 
